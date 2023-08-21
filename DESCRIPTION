@@ -25,3 +25,5 @@ Config/testthat/edition: 3
 Depends: 
     R (>= 2.10)
 LazyData: true
+URL: https://github.com/javier-gracia-tabuenca-tuni/CohortOperations2
+BugReports: https://github.com/javier-gracia-tabuenca-tuni/CohortOperations2/issues
