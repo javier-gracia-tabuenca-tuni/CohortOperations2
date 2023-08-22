@@ -16,7 +16,7 @@ mod_importCohortsFromFile_ui <- function(id) {
     mod_appendCohort_ui(),
     shinyjs::useShinyjs(),
     #
-    shiny::uiOutput(ns("selectDatabase_pickerInput_uiOutput")),
+    shiny::uiOutput(ns("selectDatabases_pickerInput_uiOutput")),
     shiny::fileInput(ns("uploadedFile"), "Choose a file in cohortData format:",
                      multiple = FALSE,
                      accept = c("text/tsv", "text/tabular-separated-values,text/plain", ".tsv")
@@ -40,7 +40,7 @@ mod_importCohortsFromFile_ui <- function(id) {
 #' @importFrom FinnGenTableTypes is_cohortData as_cohortData
 #' @importFrom stringr str_c
 #' @importFrom shinyjs toggleState reset
-mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbechCohortsSummary) {
+mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbench) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -49,7 +49,7 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbec
     #
     r <- shiny::reactiveValues(
       uploadedFile = NULL,
-      cohortDefinitionSetImported = NULL
+      cohortDataUploaded = NULL
     )
 
     r_toAdd <- shiny::reactiveValues(
@@ -65,18 +65,16 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbec
     })
 
     #
-    # render selectDatabase_pickerInput
+    # render selectDatabases_pickerInput
     #
-    output$selectDatabase_pickerInput_uiOutput <- shiny::renderUI({
-      databaseNames <- names(r_connectionHandlers$databasesHandlers)
-
-      if (length(databaseNames)==0) { databaseNames <- NULL }
+    output$selectDatabases_pickerInput_uiOutput <- shiny::renderUI({
+      databaseIdNamesList <- fct_getDatabaseIdNamesListFromDatabasesHandlers(r_connectionHandlers$databasesHandlers)
 
       shinyWidgets::pickerInput(
-        inputId = ns("selectDatabase_pickerInput"),
-        label = "Link patients to database:",
-        choices = databaseNames,
-        selected = databaseNames[1],
+        inputId = ns("selectDatabases_pickerInput"),
+        label = "Load patients into databases:",
+        choices = databaseIdNamesList,
+        selected = databaseIdNamesList[1],
         multiple = FALSE)
     })
 
@@ -85,7 +83,7 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbec
     #
     shiny::observe({
       shiny::req(r$uploadedFile)
-      shiny::req(input$selectDatabase_pickerInput)
+      shiny::req(input$selectDatabases_pickerInput)
 
       ext <- tools::file_ext(r$uploadedFile$datapath)
 
@@ -103,32 +101,25 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbec
 
       # passing error to shiny::validate
       if(is.character(isCohortData)){
-        r$cohortDefinitionSetImported <- paste(c("ERROR READING COHORTDATA FILE:", isCohortData), sep = "\n")
-        return()
+        r$cohortDataUploaded <- paste(c("ERROR READING COHORTDATA FILE:", isCohortData), sep = "\n")
+      }else{
+        r$cohortDataUploaded <- cohortData
       }
 
-      cohortTableHandler <- r_connectionHandlers$databasesHandlers[[input$selectDatabase_pickerInput]]$cohortTableHandler
-      cohortDefinitionSet <- HadesExtras::cohortDataToCohortDefinitionSet(
-        connection = cohortTableHandler$connectionHandler$getConnection(),
-        cdmDatabaseSchema = cohortTableHandler$cdmDatabaseSchema,
-        cohortData = cohortData
-      )
-
-      r$cohortDefinitionSetImported <- cohortDefinitionSet
     })
 
     #
     # updates output$cohorts_reactable with r$cohortDefinitionSetImported
     #
     output$cohorts_reactable <- reactable::renderReactable({
-      shiny::req(r$cohortDefinitionSetImported)
-      shiny::req(input$selectDatabase_pickerInput)
+      shiny::req(r$cohortDataUploaded)
+      shiny::req(input$selectDatabases_pickerInput)
 
       shiny::validate(
-        shiny::need(!is.character(r$cohortDefinitionSetImported), r$cohortDefinitionSetImported)
+        shiny::need(!is.character(r$cohortDataUploaded), r$cohortDataUploaded)
       )
 
-      table_importCohortsFromFile_reactable(r$cohortDefinitionSetImported, input$selectDatabase_pickerInput)
+      .reactatable_cohortData(r$cohortDataUploaded)
 
     })
 
@@ -139,34 +130,109 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbec
     # button import selected: checks selected cohorts
     #
     shiny::observe({
+      print(r_selectedIndex())
       shinyjs::toggleState("import_actionButton", condition = !is.null(r_selectedIndex()) )
     })
 
     shiny::observeEvent(input$import_actionButton, {
       shiny::req(r_selectedIndex())
-      shiny::req(r$cohortDefinitionSetImported)
-      shiny::req(input$selectDatabase_pickerInput)
+      shiny::req(r$cohortDataUploaded)
+      shiny::req(input$selectDatabases_pickerInput)
+
+      selectedCohortNames <- r$cohortDataUploaded |>
+        dplyr::distinct(cohort_name) |>
+        dplyr::arrange(cohort_name) |>
+        dplyr::slice(r_selectedIndex()) |>
+        dplyr::pull(cohort_name)
+
+      selectedCohortData <- r$cohortDataUploaded |>
+        dplyr::filter(cohort_name %in% selectedCohortNames)
+
+
+      cohortTableHandler <- databasesHandlers[[input$selectDatabases_pickerInput]]$cohortTableHandler
+
+      cohortIds <- cohortTableHandler$getCohortIdAndNames() |>
+        dplyr::filter(cohortId < 1000) |> # remove ids created by subsets
+        dplyr::pull(cohortId)
+      cohortIdOffset <- ifelse(length(cohortIds)==0, 0L, max(cohortIds))
+
 
       ## copy selected to
-      r_toAdd$databaseName <- input$selectDatabase_pickerInput
-      r_toAdd$cohortDefinitionSet <- r$cohortDefinitionSetImported |>
-        dplyr::slice(r_selectedIndex())
+      r_toAdd$databaseName <- input$selectDatabases_pickerInput
+      r_toAdd$cohortDefinitionSet <-  HadesExtras::cohortDataToCohortDefinitionSet(
+        cohortData = selectedCohortData,
+        cohortIdOffset = cohortIdOffset,
+        skipCohortDataCheck = TRUE
+      )
+
     })
 
     #
     # evaluate the cohorts to append; if accepted increase output to trigger closing actions
     #
-    r_append_accepted_counter <- mod_appendCohort_server("impor_file", r_connectionHandlers, r_workbechCohortsSummary, r_toAdd )
+    r_append_accepted_counter <- mod_appendCohort_server("impor_file", r_connectionHandlers, r_workbench, r_toAdd )
 
     # close and reset
     shiny::observeEvent(r_append_accepted_counter(), {
       shinyjs::reset("uploadedFile")
       r$uploadedFile <- NULL
-      r$cohortDefinitionSetImported <- NULL
+      r$cohortDataUploaded <- NULL
       r_toAdd$cohortDefinitionSet <- NULL
       reactable::updateReactable("cohorts_reactable", selected = NA, session = session )
-      r$cohortDefinitionSetImported <- NULL
     })
 
   })
 }
+
+
+
+.reactatable_cohortData <- function(cohortData) {
+  table <- cohortData |>
+    dplyr::group_by(cohort_name) |>
+    dplyr::summarise(
+      n_subjects = length(unique(person_source_value)),
+      n_entries = dplyr::n(),
+      .groups = "drop"
+    ) |>
+    dplyr::mutate(
+      n_str = paste0(n_subjects, " (", n_entries, ")")
+    ) |>
+    dplyr::arrange(cohort_name)|>
+    dplyr::select(cohort_name, n_str) |>
+    #
+    reactable::reactable(
+      columns = list(
+        cohort_name = reactable::colDef(
+          name = "Cohort Name"
+        ),
+        n_str = reactable::colDef(
+          name = "N Subjects (N Entries)"
+        )
+      ),
+      #
+      selection = "multiple",
+      onClick = "select"
+    )
+
+  return(table)
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

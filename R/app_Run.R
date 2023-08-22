@@ -10,8 +10,8 @@
 run_app <- function(pathToCohortOperationsConfigYalm, ...) {
 
   checkmate::assertFileExists(pathToCohortOperationsConfigYalm, extension = "yml")
-  cohortOperationsSettings <- yaml::read_yaml(pathToCohortOperationsConfigYalm)
-  checkmate::assertList(cohortOperationsSettings, names = "named")
+  configurationList <- yaml::read_yaml(pathToCohortOperationsConfigYalm)
+  checkmate::assertList(configurationList, names = "named")
 
 
     app  <- shiny::shinyApp(
@@ -20,7 +20,7 @@ run_app <- function(pathToCohortOperationsConfigYalm, ...) {
         ...
       )
 
-    app$appOptions$cohortOperationsSettings  <- cohortOperationsSettings
+    app$appOptions$configurationList  <- configurationList
 
     return(app)
 }

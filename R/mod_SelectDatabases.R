@@ -20,7 +20,7 @@ mod_selectDatabases_ui <- function(id) {
 #' @importFrom shiny observeEvent
 #' @importFrom dplyr bind_rows
 #'
-mod_selectDatabases_server <- function(id, cohortOperationsSettings, r_connectionHandlers) {
+mod_selectDatabases_server <- function(id, configurationList, r_connectionHandlers) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -29,24 +29,28 @@ mod_selectDatabases_server <- function(id, cohortOperationsSettings, r_connectio
     )
 
     output$selectDatabases_pickerInput_uiOutput <- shiny::renderUI({
-      settingsNames <- names(cohortOperationsSettings)
 
-      if (length(settingsNames)==0) {
-        shiny::tagList(
-        shiny::h6("Error reading the settings file."),
-        shinyWidgets::pickerInput(
-          inputId = ns("selectDatabases_pickerInput"),
-          label = "Connect to databases:",
-          choices = NULL,
-          multiple = TRUE)
-        )
-      } else {
+       configurationListChecks <- fct_checkConfigurationList(configurationList)
+
+      if (isTRUE(configurationListChecks)) {
+        databaseIdNamesList <- fct_getDatabaseIdNamesListFromConfigurationList(configurationList)
+
         shinyWidgets::pickerInput(
           inputId = ns("selectDatabases_pickerInput"),
           label = "Select databases to connect:",
-          choices = settingsNames,
-          selected = settingsNames[1],
+          choices = databaseIdNamesList,
+          selected = databaseIdNamesList[1],
           multiple = TRUE)
+      } else {
+        shiny::tagList(
+          shiny::h6("Error reading the settings file.", configurationListChecks),
+          shiny::h6(configurationListChecks),
+          shinyWidgets::pickerInput(
+            inputId = ns("selectDatabases_pickerInput"),
+            label = "Connect to databases:",
+            choices = NULL,
+            multiple = TRUE)
+        )
       }
     })
 
@@ -54,42 +58,22 @@ mod_selectDatabases_server <- function(id, cohortOperationsSettings, r_connectio
 
     shiny::observeEvent(input$selectDatabases_pickerInput, {
 
-      databasesHandlers <- list()
-      for(selectedDatabase in input$selectDatabases_pickerInput){
+      selectedConfigurationList <- configurationList[input$selectDatabases_pickerInput]
 
-        config <- cohortOperationsSettings[[selectedDatabase]]$cohortTableHandler
-
-        connectionHandler <- HadesExtras::ResultModelManager_createConnectionHandler(
-          connectionDetailsSettings = config$connection$connectionDetailsSettings,
-          tempEmulationSchema = config$connection$tempEmulationSchema
-        )
-        cohortTableHandler <- HadesExtras::CohortTableHandler$new(
-          connectionHandler = connectionHandler,
-          cdmDatabaseSchema = config$cdm$cdmDatabaseSchema,
-          vocabularyDatabaseSchema = config$cdm$vocabularyDatabaseSchema,
-          cohortDatabaseSchema = config$cohortTable$cohortDatabaseSchema,
-          cohortTableName = config$cohortTable$cohortTableName
-        )
-
-        databasesHandlers[[selectedDatabase]] <- list(cohortTableHandler = cohortTableHandler)
-      }
-
+      databasesHandlers <- fct_configurationListToDatabasesHandlers(selectedConfigurationList)
       r_connectionHandlers$databasesHandlers <- databasesHandlers
 
     })
 
 
-
     shiny::observeEvent(r_connectionHandlers$databasesHandlers, {
 
       connectionStatusLogs <- HadesExtras::LogTibble$new()$logTibble
-      for(selectedDatabase in names(r_connectionHandlers$databasesHandlers)){
-
-        connectionStatusLog <- r_connectionHandlers$databasesHandlers[[selectedDatabase]]$cohortTableHandler$connectionStatusLog$logTibble
+      for(databaseId in names(r_connectionHandlers$databasesHandlers)){
         connectionStatusLogs <- dplyr::bind_rows(
           connectionStatusLogs,
-          connectionStatusLog |> dplyr::mutate(database = selectedDatabase)
-          )
+          r_connectionHandlers$databasesHandlers[[databaseId]]$cohortTableHandler$connectionStatusLog
+        )
       }
 
       r$connectionStatusLogs <- connectionStatusLogs
@@ -97,9 +81,9 @@ mod_selectDatabases_server <- function(id, cohortOperationsSettings, r_connectio
     })
 
     output$connectionStatusLogs_reactable <- reactable::renderReactable({
-          r$connectionStatusLogs |>
-        table_connectionStatus_reactable()
-      })
+      r$connectionStatusLogs |>
+        HadesExtras::reactable_connectionStatus()
+    })
 
 
   })

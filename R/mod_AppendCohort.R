@@ -22,7 +22,7 @@ mod_appendCohort_ui <- function() {
 #' @importFrom shinyWidgets confirmSweetAlert
 #' @importFrom htmltools HTML
 #' @importFrom FinnGenTableTypes summarise_cohortData
-mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbechCohortsSummary, r_toAdd ){
+mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toAdd ){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
@@ -40,11 +40,12 @@ mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbechCohortsS
     observeEvent(r_toAdd$cohortDefinitionSet, {
       req(r_toAdd$databaseName)
       req(r_toAdd$cohortDefinitionSet)
+
       cohortTableHandler <- r_connectionHandlers$databasesHandlers[[r_toAdd$databaseName]]$cohortTableHandler
 
       # ask if existing cohorts should be replaced
       namesExistInWorkbech <- intersect(
-        cohortTableHandler$getCohortNames(),
+        cohortTableHandler$getCohortIdAndNames() |> dplyr::pull(cohortName),
         r_toAdd$cohortDefinitionSet |> dplyr::pull(cohortName)
       )
 
@@ -83,8 +84,8 @@ mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbechCohortsS
         cohortTableHandler$insertOrUpdateCohorts(r_toAdd$cohortDefinitionSet)
       }
 
-      # update r_workbechCohortsSummary
-      r_workbechCohortsSummary$workbechCohortsSummary <- fct_createCohortWorkbenchTableFromDatabasesHandlers(r_connectionHandlers$databasesHandlers)
+      # update r_workbench
+      r_workbench$cohortsSummaryDatabases <- fct_getCohortsSummariesFromDatabasesHandlers(r_connectionHandlers$databasesHandlers)
 
       # reset module
       r$replaceQuestion <- NULL

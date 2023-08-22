@@ -1,20 +1,19 @@
-
-
 # build parameters --------------------------------------------------------------
 devtools::load_all(".")
+source(testthat::test_path("setup.R"))
 source(testthat::test_path("helper.R"))
 
 
-databasesHandlers <- helper_createTestDatabasesHandlers(withEunomiaCohorts = TRUE)
+databasesHandlers <- helper_createNewDatabaseHandlers(withEunomiaCohorts = TRUE)
 
-workbechCohortsSummary <- fct_databasesHandlersToWorkbechCohortsSummary(databasesHandlers)
+cohortsSummaryDatabases <- fct_getCohortsSummariesFromDatabasesHandlers(databasesHandlers)
 
 r_connectionHandlers <- shiny::reactiveValues(
   databasesHandlers = databasesHandlers
 )
 
-r_workbechCohortsSummary <- shiny::reactiveValues(
-  workbechCohortsSummary = workbechCohortsSummary
+r_workbench <- shiny::reactiveValues(
+  cohortsSummaryDatabases = cohortsSummaryDatabases
 )
 
 # run module --------------------------------------------------------------
@@ -25,7 +24,7 @@ shiny::shinyApp(
     mod_importCohortsFromFile_ui("test")
   ),
   function(input,output,session){
-    mod_importCohortsFromFile_server("test", r_connectionHandlers, r_workbechCohortsSummary)
+    mod_importCohortsFromFile_server("test", r_connectionHandlers, r_workbench)
   }
 )
 

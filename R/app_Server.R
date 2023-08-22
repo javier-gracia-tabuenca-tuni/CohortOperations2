@@ -8,7 +8,7 @@ app_server <- function(input, output, session) {
   # Your application server logic
 
   # get settings loaded from file
-  cohortOperationsSettings <- shiny::getShinyOption("cohortOperationsSettings")
+  configurationList <- shiny::getShinyOption("configurationList")
 
   # list of connection handlers that are passed to modules,
   # not all modules used all, they modules check the list has at least the ones they need
@@ -19,16 +19,16 @@ app_server <- function(input, output, session) {
 
   # produced by modules related to cohort editing
   # consumed by cohort table viewer
-  r_workbechCohortsSummary <- shiny::reactiveValues(
+  r_workbench <- shiny::reactiveValues(
     workbechCohortsSummary = fct_createEmptyCohortWorkbenchTable()
   )
 
 
-  mod_selectDatabases_server("selectDatabases", cohortOperationsSettings, r_connectionHandlers)
+  mod_selectDatabases_server("selectDatabases", configurationList, r_connectionHandlers)
 
-  mod_cohortWorkbench_server("cohortWorkbench_importCohorts", r_connectionHandlers, r_workbechCohortsSummary)
+  mod_cohortWorkbench_server("cohortWorkbench_importCohorts", r_connectionHandlers, r_workbench)
 
-  mod_importCohortsFromFile_server("importCohortsFromFile", r_connectionHandlers, r_workbechCohortsSummary)
+  mod_importCohortsFromFile_server("importCohortsFromFile", r_connectionHandlers, r_workbench)
 
   #   r_cdmConfig <- shiny::reactiveValues(
   #     selectedConfig = NULL

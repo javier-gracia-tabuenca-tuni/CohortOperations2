@@ -30,8 +30,8 @@ library(CohortOperations2)
 devtools::load_all(".")
 
 
-cohortOperationsSettings <- yaml::read_yaml(pathToCohortOperationsConfigYalm)
-selectedSettings <- cohortOperationsSettings$db_dev_eunomia
+configurationList <- yaml::read_yaml(pathToCohortOperationsConfigYalm)
+selectedSettings <- configurationList$db_dev_eunomia
 
 
 

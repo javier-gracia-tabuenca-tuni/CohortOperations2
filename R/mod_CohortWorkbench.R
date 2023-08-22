@@ -15,7 +15,7 @@ mod_cohortWorkbench_ui <- function(id){
   htmltools::tagList(
     shinyWidgets::useSweetAlert(),
     #
-    reactable::reactableOutput(ns("workbechCohortsSummary_reactable"))
+    reactable::reactableOutput(ns("cohortsSummaryDatabases_reactable"))
   )
 }
 
@@ -31,19 +31,17 @@ mod_cohortWorkbench_ui <- function(id){
 #' @importFrom htmltools HTML
 #' @importFrom stringr str_c
 #' @importFrom readr write_tsv
-mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbechCohortsSummary,  table_editing=TRUE){
+mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbench,  table_editing=TRUE){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
 
 
     #
-    # Renders workbechCohortsSummary_reactable
+    # Renders cohortsSummaryDatabases_reactable
     #
-    output$workbechCohortsSummary_reactable <- reactable::renderReactable({
-
-      r_workbechCohortsSummary$workbechCohortsSummary |>
-        table_cohortsWorkbench_reactable(deleteButtonsShinyId = ns("cohortsWorkbenchDeleteButtons"))
-
+    output$cohortsSummaryDatabases_reactable <- reactable::renderReactable({
+      r_workbench$cohortsSummaryDatabases |>
+        HadesExtras::rectable_cohortsSummary(deleteButtonsShinyId = ns("cohortsWorkbenchDeleteButtons"))
     })
 
     #
@@ -52,8 +50,9 @@ mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbechCohor
     shiny::observeEvent(input$cohortsWorkbenchDeleteButtons, {
 
       rowNumber <- input$cohortsWorkbenchDeleteButtons$index
-      database_name <- r_workbechCohortsSummary$workbechCohortsSummary |> purrr::pluck("database_name", rowNumber)
-      cohortName <- r_workbechCohortsSummary$workbechCohortsSummary |> purrr::pluck("cohortName", rowNumber)
+      databaseName <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("databaseName", rowNumber)
+      cohortName <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("cohortName", rowNumber)
+      shortName <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("shortName", rowNumber)
 
       shinyWidgets::confirmSweetAlert(
         session = session,
@@ -61,7 +60,7 @@ mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbechCohor
         type = "question",
         title = "Delete cohort ?",
         text = htmltools::HTML(paste0(
-          "Are you sure you want to delete cohort '", cohortName, "' from database '", database_name, "' ?"
+          "Are you sure you want to delete cohort<br>", shortName,": '", cohortName, "'<br>from database<br>'", databaseName, "' ?"
         )),
         btn_labels = c("Cancel", "Delete"),
         html = TRUE
@@ -70,18 +69,19 @@ mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbechCohor
     })
 
     #
-    # If delete confirmation accepted, deletes cohort and updates r_workbechCohortsSummary
+    # If delete confirmation accepted, deletes cohort and updates r_workbench
     #
     shiny::observeEvent(input$confirmSweetAlert_CohortsWorkbenchDeleteButtons, {
       if (input$confirmSweetAlert_CohortsWorkbenchDeleteButtons == TRUE) {
         rowNumber <- input$cohortsWorkbenchDeleteButtons$index
-        database_name <- r_workbechCohortsSummary$workbechCohortsSummary |> purrr::pluck("database_name", rowNumber)
-        cohortId <- r_workbechCohortsSummary$workbechCohortsSummary |> purrr::pluck("cohortId", rowNumber)
+        databaseName <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("databaseName", rowNumber)
+        cohortId <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("cohortId", rowNumber)
+        databaseId <- fct_getDatabaseIdNamesListFromDatabasesHandlers(databasesHandlers)[[databaseName]]
 
-        cohortTableHandler <- r_connectionHandlers$databasesHandlers[[database_name]]$cohortTableHandler
+        cohortTableHandler <- r_connectionHandlers$databasesHandlers[[databaseId]]$cohortTableHandler
         cohortTableHandler$deleteCohorts(as.integer(cohortId))
 
-        r_workbechCohortsSummary$workbechCohortsSummary <- fct_createCohortWorkbenchTableFromDatabasesHandlers(r_connectionHandlers$databasesHandlers)
+        r_workbench$cohortsSummaryDatabases <- fct_getCohortsSummariesFromDatabasesHandlers(r_connectionHandlers$databasesHandlers)
 
       }
     })

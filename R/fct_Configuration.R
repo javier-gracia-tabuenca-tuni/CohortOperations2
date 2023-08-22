@@ -1,19 +1,34 @@
 
 
 
-helper_createNewDatabaseHandlers <- function(withEunomiaCohorts = FALSE) {
+fct_getDatabaseIdNamesListFromConfigurationList <- function(configurationList) {
+
+  fct_assertConfigurationList(configurationList)
+
+  databaseIdNamesList <- list()
+  for(databaseId in names(configurationList)){
+    databaseIdNamesList[[configurationList[[databaseId]]$cohortTableHandler$databaseName]] <- databaseId
+  }
+
+  return(databaseIdNamesList)
+
+}
+
+
+
+
+fct_configurationListToDatabasesHandlers <- function(configurationList) {
+
+  fct_assertConfigurationList(configurationList)
 
   databasesHandlers <- list()
-  for(selectedDatabase in names(cohortOperationsSettings)){
+  for(databaseId in names(configurationList)){
 
-    configCohortTableHandler <- cohortOperationsSettings[[selectedDatabase]]$cohortTableHandler
+    cohortTableHandlerConfig <- configurationList[[databaseId]]$cohortTableHandler
 
-    cohortTableHandler <- helper_createNewCohortTableHandler(
-      configCohortTableHandler = configCohortTableHandler,
-      withEunomiaCohorts = withEunomiaCohorts
-    )
+    cohortTableHandler <- HadesExtras::createCohortTableHandlerFromList(cohortTableHandlerConfig)
 
-    databasesHandlers[[selectedDatabase]] <- list(cohortTableHandler = cohortTableHandler)
+    databasesHandlers[[databaseId]] <- list(cohortTableHandler = cohortTableHandler)
   }
 
   return(databasesHandlers)
@@ -22,36 +37,31 @@ helper_createNewDatabaseHandlers <- function(withEunomiaCohorts = FALSE) {
 
 
 
-helper_createNewCohortTableHandler <- function(configCohortTableHandler, withEunomiaCohorts = FALSE){
-  connectionHandler <- HadesExtras::ResultModelManager_createConnectionHandler(
-    connectionDetailsSettings = configCohortTableHandler$connection$connectionDetailsSettings,
-    tempEmulationSchema = configCohortTableHandler$connection$tempEmulationSchema
-  )
-  cohortTableHandler <- HadesExtras::CohortTableHandler$new(
-    connectionHandler = connectionHandler,
-    databaseName = configCohortTableHandler$databaseName,
-    cdmDatabaseSchema = configCohortTableHandler$cdm$cdmDatabaseSchema,
-    vocabularyDatabaseSchema = configCohortTableHandler$cdm$vocabularyDatabaseSchema,
-    cohortDatabaseSchema = configCohortTableHandler$cohortTable$cohortDatabaseSchema,
-    cohortTableName = configCohortTableHandler$cohortTable$cohortTableName
-  )
-
-  if(withEunomiaCohorts==TRUE){
-
-    cohortDefinitionSet <- CohortGenerator::getCohortDefinitionSet(
-      settingsFileName = "testdata/name/Cohorts.csv",
-      jsonFolder = "testdata/name/cohorts",
-      sqlFolder = "testdata/name/sql/sql_server",
-      cohortFileNameFormat = "%s",
-      cohortFileNameValue = c("cohortName"),
-      packageName = "CohortGenerator",
-      verbose = FALSE
-    )
-
-    cohortTableHandler$insertOrUpdateCohorts(cohortDefinitionSet)
+fct_checkConfigurationList  <- function(configurationList) {
+  collection <- .fct_assertConfigurationList(configurationList)
+  if (collection$isEmpty()) {
+    return(TRUE)
+  } else {
+    return(collection$getMessages())
   }
+}
 
-  return(cohortTableHandler)
+fct_assertConfigurationList  <- function(configurationList) {
+  collection <- .fct_assertConfigurationList(configurationList)
+  if (!collection$isEmpty()) {
+    checkmate::reportAssertions(collection)
+  }
+}
+
+.fct_assertConfigurationList <- function(configurationList) {
+
+  collection = checkmate::makeAssertCollection()
+
+  configurationList |> checkmate::assertList()
+  # TODO check structure
+
+  return(collection)
 
 }
+
 
