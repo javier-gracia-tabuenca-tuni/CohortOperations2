@@ -1,6 +1,7 @@
 # EUNOMIA
 dev_eunomia:
   cohortTableHandler:
+    databaseName: eunomia1
     connection:
       connectionDetailsSettings:
           dbms: eunomia
@@ -17,6 +18,7 @@ dev_eunomia:
 # EUNOMIA 2
 dev_eunomia_2:
   cohortTableHandler:
+    databaseName: eunomia2
     connection:
       connectionDetailsSettings:
           dbms: eunomia
