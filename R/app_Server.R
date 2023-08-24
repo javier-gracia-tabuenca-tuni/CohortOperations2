@@ -20,91 +20,17 @@ app_server <- function(input, output, session) {
   # produced by modules related to cohort editing
   # consumed by cohort table viewer
   r_workbench <- shiny::reactiveValues(
-    workbechCohortsSummary = fct_createEmptyCohortWorkbenchTable()
+    cohortsSummaryDatabases = HadesExtras::createEmptyCohortsSummary()
   )
 
 
   mod_selectDatabases_server("selectDatabases", configurationList, r_connectionHandlers)
 
   mod_cohortWorkbench_server("cohortWorkbench_importCohorts", r_connectionHandlers, r_workbench)
-
   mod_importCohortsFromFile_server("importCohortsFromFile", r_connectionHandlers, r_workbench)
 
-  #   r_cdmConfig <- shiny::reactiveValues(
-  #     selectedConfig = NULL
-  #   )
-
-  #   r_cohorts <- reactiveValues(
-  #     cohortData = NULL, #R6 object, only changed by config change
-  #     summaryCohortData = #summary made from R6::summary
-  #   )
-
-  #   r_config_atlas <- reactiveValues(
-  #     #only changed by config
-  #     )
+  mod_cohortWorkbench_server("cohortWorkbench_matchCohorts", r_connectionHandlers, r_workbench)
+  mod_matchCohorts_server("matchCohorts", r_connectionHandlers, r_workbench)
 
 
-  # # base modules ---------------------------------------------
-  # # connection
-  # # input, path to config file ; returns list of connections and configurations to pass the server modules
-  # # import
-
-  # output$txt <-shiny::renderText({
-  #   paste("dd", input$cb)
-  # })
-
-
-  # aa <- shiny::reactive({
-  #   input$cb
-  # })
-
-  # mod_test_server("mod_test", aa)
-
-  # mod_test_server("mod_test2", aa)
-
-  # optional modules ---------------------------------------------
-  # if sering wrong then show error mesage
-
-
-  # INFO connection tab ---------------------------------------------
-  # r_connection <- reactiveValues(
-  #   cdm_webapi_conn = configCDMTools(),
-  #   phewas_conn = configFGpheWAS(),
-  #   connection_sandboxAPI = configGWAS())
-  # r_cohorts <- reactiveValues(
-  #   cohortData = FinnGenTableTypes::empty_cohortData(),
-  #   summaryCohortData = FinnGenTableTypes::empty_cohortData() %>% FinnGenTableTypes::summarise_cohortData()
-  # )
-  #
-  #
-  #
-  #
-  #
-  #
-  # # modules ---------------------------------------------
-  # mod_connection_to_db_server("mod_connection_to_db", r_connection)
-  #
-  # mod_cohorts_table_server("mod_cohorts_table_import", r_cohorts)
-  # mod_import_cohort_file_server("mod_import_cohort_file", r_cohorts)
-  # mod_import_cohort_atlas_server("mod_import_cohort_atlas", r_connection, r_cohorts)
-  # mod_import_cohort_endpoints_server("mod_import_cohort_endpoint", r_connection, r_cohorts)
-  #
-  # mod_cohorts_table_server("mod_cohorts_table_operate", r_cohorts)
-  # mod_operate_cohorts_server("mod_operate_cohorts", r_cohorts)
-  #
-  # mod_cohorts_table_server("mod_cohorts_table_compare", r_cohorts, table_editing = FALSE)
-  # mod_compare_cohorts_server("mod_compare_cohorts", r_cohorts)
-  #
-  # mod_cohorts_table_server("mod_cohorts_table_phewas", r_cohorts, table_editing = FALSE)
-  # mod_phewas_server("mod_phewas", r_connection, r_cohorts)
-  # mod_cohorts_table_server("mod_cohorts_table_gwas", r_cohorts, table_editing = FALSE)
-  # mod_gwas_server("mod_gwas", r_connection, r_cohorts)
-
-  #
-  # info bubbles ---------------------------------------------
-  # mod_info_box_server("info_importcohorts", "Import Cohorts", "info_importcohorts.md")
-  # mod_info_box_server("info_operatecohorts", "Operate Cohorts", "info_operatecohorts.md")
-  # mod_info_box_server("info_comparecohorts", "Compare Cohorts", "info_comparecohorts.md")
-  # mod_info_box_server("info_phewas", "CodeWAS", "info_phewas.md")
-  #
 }

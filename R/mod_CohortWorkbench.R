@@ -76,7 +76,7 @@ mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbench,  t
         rowNumber <- input$cohortsWorkbenchDeleteButtons$index
         databaseName <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("databaseName", rowNumber)
         cohortId <- r_workbench$cohortsSummaryDatabases |> purrr::pluck("cohortId", rowNumber)
-        databaseId <- fct_getDatabaseIdNamesListFromDatabasesHandlers(databasesHandlers)[[databaseName]]
+        databaseId <- fct_getDatabaseIdNamesListFromDatabasesHandlers(r_connectionHandlers$databasesHandlers)[[databaseName]]
 
         cohortTableHandler <- r_connectionHandlers$databasesHandlers[[databaseId]]$cohortTableHandler
         cohortTableHandler$deleteCohorts(as.integer(cohortId))

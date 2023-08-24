@@ -19,7 +19,8 @@ app_ui <- function(request) {
           shiny::h5(" Databases"),
           shinydashboard::menuItem("Databases connection", tabName = "selectDatabases", icon = shiny::icon("database")),
           shiny::h5(" Cohorts"),
-          shinydashboard::menuItem("Import Cohorts", tabName = "importCohorts", icon = shiny::icon("address-card"))
+          shinydashboard::menuItem("Import Cohorts", tabName = "importCohorts", icon = shiny::icon("address-card")),
+          shinydashboard::menuItem("Match Cohorts", tabName = "matchCohorts", icon = shiny::icon("connectdevelop"))
         )
       ),
 
@@ -31,7 +32,7 @@ app_ui <- function(request) {
             tabName = "selectDatabases",
             mod_selectDatabases_ui("selectDatabases")
           ),
-          ## Import Cohorts
+          ## TAB Import Cohorts
           shinydashboard::tabItem(
             tabName = "importCohorts",
             ### Cohorts workbench
@@ -50,6 +51,22 @@ app_ui <- function(request) {
                 "from File",
                 mod_importCohortsFromFile_ui("importCohortsFromFile")
               )
+            )
+          ),
+          ## TAB Matching Cohorts
+          shinydashboard::tabItem(
+            tabName = "matchCohorts",
+            ### Cohorts workbench
+            shinydashboard::box(
+              title = "Cohorts workbench ",
+              status = "primary", solidHeader = TRUE, width = 12,
+              mod_cohortWorkbench_ui("cohortWorkbench_matchCohorts")
+            ),
+            ### Import Cohorts
+            shinydashboard::box(
+              title = tagList(shiny::icon("connectdevelop"), "Match Cohorts:"),
+              solidHeader = TRUE, width = 12,
+              mod_matchCohorts_ui("matchCohorts")
             )
           )
         )

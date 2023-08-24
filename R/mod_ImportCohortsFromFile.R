@@ -130,7 +130,6 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workben
     # button import selected: checks selected cohorts
     #
     shiny::observe({
-      print(r_selectedIndex())
       shinyjs::toggleState("import_actionButton", condition = !is.null(r_selectedIndex()) )
     })
 
@@ -149,7 +148,7 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workben
         dplyr::filter(cohort_name %in% selectedCohortNames)
 
 
-      cohortTableHandler <- databasesHandlers[[input$selectDatabases_pickerInput]]$cohortTableHandler
+      cohortTableHandler <- r_connectionHandlers$databasesHandlers[[input$selectDatabases_pickerInput]]$cohortTableHandler
 
       cohortIds <- cohortTableHandler$getCohortIdAndNames() |>
         dplyr::filter(cohortId < 1000) |> # remove ids created by subsets

@@ -4,7 +4,7 @@ source(testthat::test_path("setup.R"))
 source(testthat::test_path("helper.R"))
 
 
-databasesHandlers <- helper_createNewDatabaseHandlers(withEunomiaCohorts = FALSE)
+databasesHandlers <- helper_createNewDatabaseHandlers(withEunomiaCohorts = TRUE)
 
 cohortsSummaryDatabases <- fct_getCohortsSummariesFromDatabasesHandlers(databasesHandlers)
 
@@ -19,27 +19,16 @@ r_workbench <- shiny::reactiveValues(
 # run module --------------------------------------------------------------
 devtools::load_all(".")
 
-# shiny::shinyApp(
-#   shiny::fluidPage(
-#     mod_importCohortsFromFile_ui("test")
-#   ),
-#   function(input,output,session){
-#     mod_importCohortsFromFile_server("test", r_connectionHandlers, r_workbench)
-#   }
-# )
-
-
 shiny::shinyApp(
   shiny::fluidPage(
     mod_cohortWorkbench_ui("test"),
-    mod_importCohortsFromFile_ui("test")
+    mod_matchCohorts_ui("test")
   ),
   function(input,output,session){
-    mod_importCohortsFromFile_server("test", r_connectionHandlers, r_workbench)
+    mod_matchCohorts_server("test", r_connectionHandlers, r_workbench)
     mod_cohortWorkbench_server("test", r_connectionHandlers, r_workbench)
   }
 )
-
 
 
 

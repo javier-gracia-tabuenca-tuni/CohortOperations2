@@ -79,9 +79,26 @@ mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toA
       req(r_toAdd$databaseName)
       req(r_toAdd$cohortDefinitionSet)
       cohortTableHandler <- r_connectionHandlers$databasesHandlers[[r_toAdd$databaseName]]$cohortTableHandler
-
+      #browser()
       if(r$replaceQuestion){
-        cohortTableHandler$insertOrUpdateCohorts(r_toAdd$cohortDefinitionSet)
+        #browser()
+        cohortDefinitionSet <- r_toAdd$cohortDefinitionSet
+        # TEMP FIX this should be moved to HadesExtras::correctCohortDefinitioSet
+        if (!("subsetDefinitionId" %in% names(cohortDefinitionSet))) {
+          cohortDefinitionSet <- cohortDefinitionSet |> dplyr::mutate(subsetDefinitionId = cohortId)
+        }
+        # TEMP FIX
+        cohortDefinitionSet <- cohortDefinitionSet |>  dplyr::left_join(
+          cohortTableHandler$getCohortIdAndNames() |> dplyr::rename(existingCohortId = cohortId, existingSubsetDefinitionId = subsetDefinitionId),
+          by = "cohortName"
+        ) |>
+          dplyr::mutate(
+            cohortId = dplyr::if_else(!is.na(existingCohortId), existingCohortId, cohortId),
+            subsetDefinitionId = dplyr::if_else(!is.na(existingSubsetDefinitionId), existingSubsetDefinitionId, subsetDefinitionId)
+          ) |>
+          dplyr::select(-existingCohortId, -existingSubsetDefinitionId)
+
+        cohortTableHandler$insertOrUpdateCohorts(cohortDefinitionSet)
       }
 
       # update r_workbench
