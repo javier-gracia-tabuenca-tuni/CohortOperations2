@@ -272,12 +272,8 @@ mod_matchCohorts_server <- function(id, r_connectionHandlers, r_workbench) {
 
     # close and reset
     shiny::observeEvent(r_append_accepted_counter(), {
-
-      # trigger change in r_connectionHandlers$databasesHandlers with out changing it
-      # a <- r_connectionHandlers$databasesHandlers
-      # r_connectionHandlers$databasesHandlers <- NULL
-      # r_connectionHandlers$databasesHandlers <- a
-
+      # change in r_workbench$cohortsSummaryDatabases will update output$selectDatabases_pickerInput_uiOutput <- shiny::renderUI({
+      # this will chain update the rest
       r$cohortDefinitionSet <- NULL
     })
 
