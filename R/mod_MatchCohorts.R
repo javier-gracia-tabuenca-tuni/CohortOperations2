@@ -79,7 +79,7 @@ mod_matchCohorts_ui <- function(id) {
     ),
     #
     htmltools::hr(),
-    shiny::tags$h4("Result"),
+    shiny::tags$h4("Summary"),
     shiny::textOutput(ns("newCohortName_text")),
     shiny::tags$br(),
     shiny::actionButton(ns("create_actionButton"), "Create Match Cohort")

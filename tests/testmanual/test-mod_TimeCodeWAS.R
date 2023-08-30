@@ -22,12 +22,13 @@ devtools::load_all(".")
 shiny::shinyApp(
   shiny::fluidPage(
     mod_cohortWorkbench_ui("test"),
-    mod_matchCohorts_ui("test")
+    mod_timeCodeWAS_ui("test")
   ),
   function(input,output,session){
     mod_cohortWorkbench_server("test", r_connectionHandlers, r_workbench)
-    mod_matchCohorts_server("test", r_connectionHandlers, r_workbench)
-  }
+    mod_timeCodeWAS_server("test", r_connectionHandlers)
+  },
+  options = list(launch.browser=TRUE)
 )
 
 
