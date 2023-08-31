@@ -25,7 +25,9 @@ mod_selectDatabases_server <- function(id, configurationList, r_connectionHandle
     ns <- session$ns
 
     r <- shiny::reactiveValues(
-      connectionStatusLogs = HadesExtras::LogTibble$new()$logTibble,
+      connectionStatusLogs = HadesExtras::LogTibble$new()$logTibble |>
+        dplyr::mutate(databaseName = "") |>
+        dplyr::relocate(databaseName, .before = 1)
     )
 
     output$selectDatabases_pickerInput_uiOutput <- shiny::renderUI({
@@ -68,7 +70,10 @@ mod_selectDatabases_server <- function(id, configurationList, r_connectionHandle
 
     shiny::observeEvent(r_connectionHandlers$databasesHandlers, {
 
-      connectionStatusLogs <- HadesExtras::LogTibble$new()$logTibble
+      connectionStatusLogs <- HadesExtras::LogTibble$new()$logTibble |>
+        dplyr::mutate(databaseName = "") |>
+        dplyr::relocate(databaseName, .before = 1)
+
       for(databaseId in names(r_connectionHandlers$databasesHandlers)){
         connectionStatusLogs <- dplyr::bind_rows(
           connectionStatusLogs,
@@ -81,6 +86,7 @@ mod_selectDatabases_server <- function(id, configurationList, r_connectionHandle
     })
 
     output$connectionStatusLogs_reactable <- reactable::renderReactable({
+
       r$connectionStatusLogs |>
         HadesExtras::reactable_connectionStatus()
     })

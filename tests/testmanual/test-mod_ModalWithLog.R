@@ -1,16 +1,6 @@
 
 # setup  ------------------------------------------------------------------
-# init future
-future::plan(future::multisession, workers = 2)
-
-# init loger
-logFileName <- tempfile(fileext = ".co2log.txt")
-logger <- ParallelLogger::createLogger(
-  appenders = list(ParallelLogger::createFileAppender(fileName = logFileName))
-)
-ParallelLogger::clearLoggers()
-ParallelLogger::registerLogger(logger)
-ParallelLogger::logTrace("Start logging")
+logger <- setup_ModalWithLog()
 
 
 # run ---------------------------------------------------------------------
@@ -55,6 +45,8 @@ server <- function(input, output) {
       for(i in 15:0){
         Sys.sleep(1)
         ParallelLogger::logInfo("Hello external f", i, a, b)
+        # force error
+        if(i==5) stop("force error")
         inter$execInterrupts()
       }
       return(tibble::tibble(x = a*b))

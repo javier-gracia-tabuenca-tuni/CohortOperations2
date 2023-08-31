@@ -1,27 +1,9 @@
-#' mod_appendCohort_ui UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @importFrom shiny NS tagList
-#' @importFrom shinyWidgets useSweetAlert
+
 mod_appendCohort_ui <- function() {
   shinyWidgets::useSweetAlert()
 }
 
 
-#' server_appendCohort Server Functions
-#'
-#' @noRd
-#' @importFrom shiny reactiveValues observe observeEvent
-#' @importFrom dplyr inner_join distinct mutate pull anti_join bind_rows
-#' @importFrom stringr str_c
-#' @importFrom shinyWidgets confirmSweetAlert
-#' @importFrom htmltools HTML
-#' @importFrom FinnGenTableTypes summarise_cohortData
 mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toAdd ){
   moduleServer( id, function(input, output, session){
     ns <- session$ns

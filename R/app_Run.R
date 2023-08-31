@@ -9,10 +9,13 @@
 #' @importFrom golem with_golem_options
 run_app <- function(pathToCohortOperationsConfigYalm, ...) {
 
+  # set up configuration
   checkmate::assertFileExists(pathToCohortOperationsConfigYalm, extension = "yml")
   configurationList <- yaml::read_yaml(pathToCohortOperationsConfigYalm)
   checkmate::assertList(configurationList, names = "named")
 
+  # set up logger
+  logger <- setup_ModalWithLog()
 
     app  <- shiny::shinyApp(
         ui = app_ui,
@@ -20,7 +23,9 @@ run_app <- function(pathToCohortOperationsConfigYalm, ...) {
         ...
       )
 
+    # setup shiny options
     app$appOptions$configurationList  <- configurationList
+    app$appOptions$logger  <- logger
 
     return(app)
 }

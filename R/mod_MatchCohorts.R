@@ -89,16 +89,9 @@ mod_matchCohorts_ui <- function(id) {
 
 #' import_cohort_file Server Functions
 #'
-#' @noRd
-#' @importFrom shiny moduleServer reactiveValues observe req validate need observeEvent
-#' @importFrom reactable renderReactable reactable getReactableState updateReactable
-#' @importFrom tools file_ext
-#' @importFrom readr read_tsv
-#' @importFrom utils hasName
-#' @importFrom dplyr mutate distinct semi_join slice
-#' @importFrom FinnGenTableTypes is_cohortData as_cohortData
-#' @importFrom stringr str_c
-#' @importFrom shinyjs toggleState reset
+
+
+
 mod_matchCohorts_server <- function(id, r_connectionHandlers, r_workbench) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns

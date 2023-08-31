@@ -1,7 +1,26 @@
 
+setup_ModalWithLog <- function(
+    logFileName = tempfile(fileext = ".co2log.txt")
+  ) {
+  # setup  ------------------------------------------------------------------
+  # init future
+  future::plan(future::multisession, workers = 2)
+
+  # init loger
+  logger <- ParallelLogger::createLogger(
+    appenders = list(ParallelLogger::createFileAppender(fileName = logFileName))
+  )
+  ParallelLogger::clearLoggers()
+  ParallelLogger::registerLogger(logger)
+  ParallelLogger::logTrace("Start logging")
+
+  return(logger)
+}
 
 
-modalWithLog_server <- function(id,.f,.r_l, logger) {
+
+
+modalWithLog_server <- function(id,.f,.r_l, logger, logUpdateSeconds = 0.5, logLines=10) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -11,7 +30,7 @@ modalWithLog_server <- function(id,.f,.r_l, logger) {
     inter <- ipc::AsyncInterruptor$new()
 
     # set up modal
-    autoUpdate <- shiny::reactiveTimer(1000)
+    autoUpdate <- shiny::reactiveTimer(logUpdateSeconds*1000)
 
     # intermediary result
     result_val <- reactiveVal()
@@ -24,7 +43,14 @@ modalWithLog_server <- function(id,.f,.r_l, logger) {
         # register logger
         ParallelLogger::registerLogger(logger)
         # run function
-        result <- do.call(.f, .l)
+        result <- NULL
+        tryCatch({
+          result <- do.call(.f, .l)
+        }, error = function(e){
+          ParallelLogger::logError("Error in future in modalWithLog_server", e)
+          result <<- e$message
+          })
+
         # set result to reactive
         queue$producer$fireAssignReactive("result_val",result)
         # set interrupter
@@ -49,10 +75,9 @@ modalWithLog_server <- function(id,.f,.r_l, logger) {
     output$modalContent <- shiny::renderText({
       autoUpdate()
       file_path <- logger$appenders[[1]]$fileName
-      num_lines <- 10
 
       lines <- readLines(file_path)
-      last_lines <- tail(lines, num_lines)
+      last_lines <- tail(lines, logLines)
 
       paste0(last_lines, collapse = "\n")
     })
@@ -66,8 +91,13 @@ modalWithLog_server <- function(id,.f,.r_l, logger) {
 
     # when result ready close modal and return
     shiny::reactive({
-      removeModal()
-      result_val()
+      shiny::req(result_val())
+      if(is.character(result_val())){
+        return(result_val())
+      }else{
+        shiny::removeModal()
+        return(result_val())
+      }
     })
 
   })

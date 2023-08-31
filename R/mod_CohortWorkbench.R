@@ -1,15 +1,4 @@
-#' cohorts_table UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @importFrom shiny NS actionButton downloadButton
-#' @importFrom htmltools tagList hr
-#' @importFrom shinyjs useShinyjs
-#' @importFrom reactable reactableOutput
+
 mod_cohortWorkbench_ui <- function(id){
   ns <- shiny::NS(id)
   htmltools::tagList(
@@ -19,18 +8,6 @@ mod_cohortWorkbench_ui <- function(id){
   )
 }
 
-#' cohorts_table Server Functions
-#'
-#' @noRd
-#' @importFrom reactable renderReactable getReactableState
-#' @importFrom FinnGenTableTypes table_summarycohortData
-#' @importFrom shinyjs toggleState
-#' @importFrom shiny observeEvent req downloadHandler
-#' @importFrom dplyr slice pull filter
-#' @importFrom shinyWidgets confirmSweetAlert
-#' @importFrom htmltools HTML
-#' @importFrom stringr str_c
-#' @importFrom readr write_tsv
 mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbench,  table_editing=TRUE){
   moduleServer( id, function(input, output, session){
     ns <- session$ns

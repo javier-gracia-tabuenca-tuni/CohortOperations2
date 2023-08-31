@@ -65,7 +65,7 @@ mod_temporalRanges_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     tags$div(id=ns('inputList')),
-    actionButton(ns('addBtn'), 'Add Window')
+    shiny::actionButton(ns('addBtn'), 'Add Window')
   )
 }
 

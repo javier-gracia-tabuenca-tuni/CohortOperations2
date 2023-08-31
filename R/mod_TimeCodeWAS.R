@@ -1,19 +1,9 @@
-#' timeCodeWAS UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @importFrom shiny NS fileInput actionButton
-#' @importFrom htmltools tagList hr
-#' @importFrom shinyjs useShinyjs
-#' @importFrom reactable reactableOutput
+
+
+
 mod_timeCodeWAS_ui <- function(id) {
   ns <- shiny::NS(id)
   htmltools::tagList(
-    mod_appendCohort_ui(),
     shinyjs::useShinyjs(),
     #
     shiny::tags$h4("Database"),
@@ -68,18 +58,7 @@ mod_timeCodeWAS_ui <- function(id) {
   )
 }
 
-#' import_cohort_file Server Functions
-#'
-#' @noRd
-#' @importFrom shiny moduleServer reactiveValues observe req validate need observeEvent
-#' @importFrom reactable renderReactable reactable getReactableState updateReactable
-#' @importFrom tools file_ext
-#' @importFrom readr read_tsv
-#' @importFrom utils hasName
-#' @importFrom dplyr mutate distinct semi_join slice
-#' @importFrom FinnGenTableTypes is_cohortData as_cohortData
-#' @importFrom stringr str_c
-#' @importFrom shinyjs toggleState reset
+
 mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -92,8 +71,14 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     r_ranges <- mod_temporalRanges_server("selectRanges")
 
     r <- shiny::reactiveValues(
-      studySettings = NULL,
-      timeCodeWasCounts = NULL
+      studySettings = NULL
+    )
+
+    rf_timeCodeWasCounts <- shiny::reactiveVal()
+
+    # A reactive value with the inputs to modalWithLog_server
+    .r_l <- shiny::reactiveValues(
+      .l = NULL
     )
 
 
@@ -212,33 +197,52 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     #
     shiny::observeEvent(input$run_actionButton, {
       shiny::req(r$studySettings)
-
+      # copy studySettings to .r_l$.l
       cohortTableHandler <- r_connectionHandlers$databasesHandlers[[input$selectDatabases_pickerInput]]$cohortTableHandler
 
-      temporalCovariateSettings <- do.call(FeatureExtraction::createTemporalCovariateSettings, r$studySettings$temporalCovariateSettings)
-#browser()
-      timeCodeWasCounts <- HadesExtras::CohortDiagnostics_runTimeCodeWAS(
-        connection = cohortTableHandler$connectionHandler$getConnection(),
-        cdmDatabaseSchema = cohortTableHandler$cdmDatabaseSchema,
-        vocabularyDatabaseSchema = cohortTableHandler$vocabularyDatabaseSchema,
-        cohortDatabaseSchema = cohortTableHandler$cohortDatabaseSchema,
-        cohortTable = cohortTableHandler$cohortTableNames$cohortTable,
-        cohortIdCases = as.integer(r$studySettings$cohortIdCases),
-        cohortIdControls = as.integer(r$studySettings$cohortIdControls),
-        covariateSettings = temporalCovariateSettings
+      l <- r$studySettings
+
+      .r_l$.l <- list(
+        cohortTableHandler = cohortTableHandler,
+        studySettings = l
       )
-
-      r$timeCodeWasCounts <- timeCodeWasCounts
-
     })
+
+
+    # Take parameters, run function in a future, open modal with log, close modal when ready, return value
+    rf_timeCodeWasCounts <- modalWithLog_server(
+      id = "sss",
+      .f = function(
+          cohortTableHandler,
+          studySettings
+        ){
+        ParallelLogger::logInfo("Start timeCodeWasCounts")
+        temporalCovariateSettings <- do.call(FeatureExtraction::createTemporalCovariateSettings, studySettings$temporalCovariateSettings)
+        #browser()
+        timeCodeWasCounts <- HadesExtras::CohortDiagnostics_runTimeCodeWAS(
+          connection = cohortTableHandler$connectionHandler$getConnection(),
+          cdmDatabaseSchema = cohortTableHandler$cdmDatabaseSchema,
+          vocabularyDatabaseSchema = cohortTableHandler$vocabularyDatabaseSchema,
+          cohortDatabaseSchema = cohortTableHandler$cohortDatabaseSchema,
+          cohortTable = cohortTableHandler$cohortTableNames$cohortTable,
+          cohortIdCases = as.integer(studySettings$cohortIdCases),
+          cohortIdControls = as.integer(studySettings$cohortIdControls),
+          covariateSettings = temporalCovariateSettings
+        )
+        ParallelLogger::logInfo("End timeCodeWasCounts")
+        return(timeCodeWasCounts)
+      },
+      .r_l = .r_l,
+      logger = shiny::getShinyOption("logger"))
+
 
     #
     # display results
     #
     output$reactableResults <- reactable::renderReactable({
-      shiny::req(r$timeCodeWasCounts)
+      shiny::req(rf_timeCodeWasCounts)
 
-      r$timeCodeWasCounts |>
+      rf_timeCodeWasCounts() |>
       reactable::reactable(
         sortable = TRUE,
         resizable = TRUE,

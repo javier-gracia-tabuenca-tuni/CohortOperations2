@@ -1,15 +1,4 @@
-#' import_cohort_file UI Function
-#'
-#' @description A shiny Module.
-#'
-#' @param id,input,output,session Internal parameters for {shiny}.
-#'
-#' @noRd
-#'
-#' @importFrom shiny NS fileInput actionButton
-#' @importFrom htmltools tagList hr
-#' @importFrom shinyjs useShinyjs
-#' @importFrom reactable reactableOutput
+
 mod_importCohortsFromFile_ui <- function(id) {
   ns <- shiny::NS(id)
   htmltools::tagList(
@@ -28,18 +17,6 @@ mod_importCohortsFromFile_ui <- function(id) {
   )
 }
 
-#' import_cohort_file Server Functions
-#'
-#' @noRd
-#' @importFrom shiny moduleServer reactiveValues observe req validate need observeEvent
-#' @importFrom reactable renderReactable reactable getReactableState updateReactable
-#' @importFrom tools file_ext
-#' @importFrom readr read_tsv
-#' @importFrom utils hasName
-#' @importFrom dplyr mutate distinct semi_join slice
-#' @importFrom FinnGenTableTypes is_cohortData as_cohortData
-#' @importFrom stringr str_c
-#' @importFrom shinyjs toggleState reset
 mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workbench) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
