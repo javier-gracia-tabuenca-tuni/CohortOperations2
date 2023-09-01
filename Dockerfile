@@ -37,6 +37,7 @@ USER shiny
 RUN git clone https://github.com/javier-gracia-tabuenca-tuni/CohortOperations2.git /home/shiny/CohortOperations2
 
 WORKDIR /home/shiny/CohortOperations2
+RUN git pull
 
 COPY GITHUBPAT.txt /tmp/GITHUBPAT.txt
 
@@ -48,10 +49,10 @@ COPY GITHUBPAT.txt /tmp/GITHUBPAT.txt
 #RUN R -e "renv::restore()"
 # install OHDSI HADES R packages from CRAN and GitHub, temporarily adding a GitHub Personal Access Token (PAT) to the Renviron file
 RUN --mount=type=secret,id=build_github_pat \
-	#cp /usr/local/lib/R/etc/Renviron ./Renviron \
-        export GITHUB_PAT=$(cat /tmp/GITHUBPAT.txt)\
+	cp /usr/local/lib/R/etc/Renviron ./Renviron \
+        && echo "GITHUB_PAT=$(cat /tmp/GITHUBPAT.txt)" >> ./Renviron \
         && R -e "renv::status()" \
-        && unset GITHUB_PAT
+        && rm ./Renviron
 
 #ENV GITHUB_PAT ''
 
