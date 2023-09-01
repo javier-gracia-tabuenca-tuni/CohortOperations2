@@ -54,4 +54,5 @@ ENV DATABASECONNECTOR_JAR_FOLDER="/root/hades/jdbc_drivers"
 RUN R -e "DatabaseConnector::downloadJdbcDrivers('bigquery')"
 
 EXPOSE 8787
+EXPOSE 8888
 

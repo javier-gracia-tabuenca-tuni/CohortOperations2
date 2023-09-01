@@ -8,7 +8,7 @@ dev_bigquery:
         user: ""
         password: ""
         connectionString: jdbc:bigquery://https://www.googleapis.com/auth/bigquery:433;ProjectId=fg-production-sandbox-6;OAuthType=3;Timeout=10000;
-        pathToDriver: /root/hades/jdbc_drivers/bigquery # from docker file
+        pathToDriver: /root/hades/jdbc_drivers # from docker file
       tempEmulationSchema: fg-production-sandbox-6.sandbox #needed for creating tmp table in BigQuery
       useBigrqueryUpload: true # option for HadesExtras
     cdm:
@@ -17,10 +17,9 @@ dev_bigquery:
     cohortTable:
       cohortDatabaseSchema: fg-production-sandbox-6.sandbox
       cohortTableName: javier_test_cohort_table
-    webAPIurl: https://ohdsi-webapi.app.finngen.fi/WebAPI/
 
 # DF10
-dev_bigquery:
+dev_bigquery2:
   cohortTableHandler:
     databaseName: FinnGen-DF10
     connection:
@@ -29,7 +28,7 @@ dev_bigquery:
         user: ""
         password: ""
         connectionString: jdbc:bigquery://https://www.googleapis.com/auth/bigquery:433;ProjectId=fg-production-sandbox-6;OAuthType=3;Timeout=10000;
-        pathToDriver: /root/hades/jdbc_drivers/bigquery # from docker file
+        pathToDriver: /root/hades/jdbc_drivers # from docker file
       tempEmulationSchema: fg-production-sandbox-6.sandbox #needed for creating tmp table in BigQuery
       useBigrqueryUpload: true # option for HadesExtras
     cdm:
@@ -38,4 +37,3 @@ dev_bigquery:
     cohortTable:
       cohortDatabaseSchema: fg-production-sandbox-6.sandbox
       cohortTableName: javier_test_cohort_table
-    webAPIurl: https://ohdsi-webapi.app.finngen.fi/WebAPI/
