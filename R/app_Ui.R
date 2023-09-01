@@ -45,7 +45,7 @@ app_ui <- function(request) {
             ),
             ### Import Cohorts
             shinydashboard::tabBox(
-              title = tagList(shiny::icon("upload"), "Import Cohorts:"),
+              title = shiny::tagList(shiny::icon("upload"), "Import Cohorts:"),
               id = "import_files", width = 12, side="right",
               selected = "from File",
               #### panel FILE
@@ -66,7 +66,7 @@ app_ui <- function(request) {
             ),
             ### Import Cohorts
             shinydashboard::box(
-              title = tagList(shiny::icon("connectdevelop"), "Match Cohorts:"),
+              title = shiny::tagList(shiny::icon("connectdevelop"), "Match Cohorts:"),
               solidHeader = TRUE, width = 12,
               mod_matchCohorts_ui("matchCohorts")
             )
@@ -82,7 +82,7 @@ app_ui <- function(request) {
             ),
             ### Import Cohorts
             shinydashboard::box(
-              title = tagList(shiny::icon("connectdevelop"), "TimeCodeWAS:"),
+              title = shiny::tagList(shiny::icon("connectdevelop"), "TimeCodeWAS:"),
               solidHeader = TRUE, width = 12,
               mod_timeCodeWAS_ui("timeCodeWAS")
             )

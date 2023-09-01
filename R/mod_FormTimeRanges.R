@@ -46,7 +46,7 @@
       shinyWidgets::updateSliderTextInput(session, "barRange", selected = c(input$lowRange,input$highRange))
     })
 
-    observeEvent(input$remove,{
+    shiny::observeEvent(input$remove,{
       # father tag
       selfId <- ns("") |>  stringr::str_sub(end = -2)
       shiny::removeUI(
@@ -64,7 +64,7 @@
 mod_temporalRanges_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
-    tags$div(id=ns('inputList')),
+    shiny::tags$div(id=ns('inputList')),
     shiny::actionButton(ns('addBtn'), 'Add Window')
   )
 }
@@ -80,7 +80,7 @@ mod_temporalRanges_server <- function(id, session) {
       listOutputRanges = NULL
     )
 
-    observeEvent(input$addBtn, {
+    shiny::observeEvent(input$addBtn, {
       # sever module
       r$listOutputRanges[[input$addBtn]] <<- .mod_timeRange_server(input$addBtn, ns(input$addBtn))
       # ui module

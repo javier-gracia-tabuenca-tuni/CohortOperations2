@@ -58,9 +58,9 @@ mod_matchCohorts_ui <- function(id) {
       ),
       individual = TRUE,
       checkIcon = list(
-        yes = tags$i(class = "fa fa-circle",
+        yes = shiny::tags$i(class = "fa fa-circle",
                      style = "color: steelblue"),
-        no = tags$i(class = "fa fa-circle-o",
+        no = shiny::tags$i(class = "fa fa-circle-o",
                     style = "color: steelblue"))
     ),
     shinyWidgets::radioGroupButtons(
@@ -72,9 +72,9 @@ mod_matchCohorts_ui <- function(id) {
       ),
       individual = TRUE,
       checkIcon = list(
-        yes = tags$i(class = "fa fa-circle",
+        yes = shiny::tags$i(class = "fa fa-circle",
                      style = "color: steelblue"),
-        no = tags$i(class = "fa fa-circle-o",
+        no = shiny::tags$i(class = "fa fa-circle-o",
                     style = "color: steelblue"))
     ),
     #
@@ -172,7 +172,7 @@ mod_matchCohorts_server <- function(id, r_connectionHandlers, r_workbench) {
     #
     # activate settings if cohors have been selected
     #
-    observe({
+    shiny::observe({
       condition <- !is.null(input$selectMatchCohort_pickerInput) & input$selectMatchCohort_pickerInput!="NA"
       shinyjs::toggleState("matchRatio_numericInput", condition = condition )
       shinyjs::toggleState("matchSex_switch", condition = condition )
@@ -187,7 +187,7 @@ mod_matchCohorts_server <- function(id, r_connectionHandlers, r_workbench) {
     #
     # create temporal cohortDefinitionSet and render name
     #
-    observe({
+    shiny::observe({
       shiny::req(input$selectDatabases_pickerInput)
       shiny::req(input$selectTargetCohort_pickerInput)
       shiny::req(input$selectTargetCohort_pickerInput!="NA")

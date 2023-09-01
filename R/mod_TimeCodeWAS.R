@@ -144,7 +144,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     #
     # activate settings if cohors have been selected
     #
-    observe({
+    shiny::observe({
       condition <- !is.null(input$selectControlCohort_pickerInput) & input$selectControlCohort_pickerInput!="NA"
       shinyjs::toggleState("selectCovariates", condition = condition )
       shinyjs::toggleState("selectRanges-addBtn", condition = condition )
@@ -154,7 +154,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     #
     # create settings
     #
-    observe({
+    shiny::observe({
       shiny::req(input$selectDatabases_pickerInput)
       shiny::req(input$selectCaseCohort_pickerInput)
       shiny::req(input$selectCaseCohort_pickerInput!="NA")
@@ -204,7 +204,8 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
 
       .r_l$.l <- list(
         cohortTableHandler = cohortTableHandler,
-        studySettings = l
+        studySettings = l,
+        sqlRenderTempEmulationSchema = getOption("sqlRenderTempEmulationSchema")
       )
     })
 
@@ -214,8 +215,12 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
       id = "sss",
       .f = function(
           cohortTableHandler,
-          studySettings
+          studySettings,
+          sqlRenderTempEmulationSchema
         ){
+        # needs to be set in the future
+        options(sqlRenderTempEmulationSchema=sqlRenderTempEmulationSchema)
+        #
         ParallelLogger::logInfo("Start timeCodeWasCounts")
         temporalCovariateSettings <- do.call(FeatureExtraction::createTemporalCovariateSettings, studySettings$temporalCovariateSettings)
         #browser()
@@ -256,7 +261,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     # activate settings if cohors have been selected
     #
     shiny::observe({
-      condition <- !is.null(r$timeCodeWasCounts)
+      condition <- !is.null(rf_timeCodeWasCounts())
       shinyjs::toggleState("download_actionButton", condition = condition )
       shinyjs::toggleState("view_actionButton", condition = condition )
     })

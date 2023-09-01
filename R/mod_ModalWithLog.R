@@ -8,7 +8,9 @@ setup_ModalWithLog <- function(
 
   # init loger
   logger <- ParallelLogger::createLogger(
-    appenders = list(ParallelLogger::createFileAppender(fileName = logFileName))
+    appenders = list(ParallelLogger::createFileAppender(
+      fileName = logFileName,
+      layout = ParallelLogger::layoutSimple))
   )
   ParallelLogger::clearLoggers()
   ParallelLogger::registerLogger(logger)
@@ -33,19 +35,23 @@ modalWithLog_server <- function(id,.f,.r_l, logger, logUpdateSeconds = 0.5, logL
     autoUpdate <- shiny::reactiveTimer(logUpdateSeconds*1000)
 
     # intermediary result
-    result_val <- reactiveVal()
+    result_val <- shiny::reactiveVal()
 
     # when params update run function
     shiny::observeEvent(.r_l$.l,{
       .l = .r_l$.l
-      ParallelLogger::logInfo("Launching future in modalWithLog_server")
+      ParallelLogger::logInfo("Launching future in modalWithLog_server id = ", id)
+      #browser()
       future::future({
-        # register logger
-        ParallelLogger::registerLogger(logger)
         # run function
         result <- NULL
         tryCatch({
+          # register logger
+          ParallelLogger::registerLogger(logger)
+          ParallelLogger::logInfo("Launching ")
+          #run
           result <- do.call(.f, .l)
+          #
         }, error = function(e){
           ParallelLogger::logError("Error in future in modalWithLog_server", e)
           result <<- e$message
@@ -62,7 +68,7 @@ modalWithLog_server <- function(id,.f,.r_l, logger, logUpdateSeconds = 0.5, logL
           ui_load_spinner(shiny::plotOutput(outputId = "plot", width = "500px", height = "100px"), proxy.height = "90px"),
           shiny::verbatimTextOutput(ns("modalContent"))
         ),
-        footer = tagList(
+        footer = shiny::tagList(
           shiny::actionButton(ns("interrupt"), "Interrupt")
         ),
         size = "xl"

@@ -9,7 +9,7 @@ mod_cohortWorkbench_ui <- function(id){
 }
 
 mod_cohortWorkbench_server <- function(id, r_connectionHandlers, r_workbench,  table_editing=TRUE){
-  moduleServer( id, function(input, output, session){
+  shiny::moduleServer( id, function(input, output, session){
     ns <- session$ns
 
 

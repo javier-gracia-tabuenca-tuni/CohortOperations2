@@ -3,6 +3,7 @@ devtools::load_all(".")
 source(testthat::test_path("setup.R"))
 source(testthat::test_path("helper.R"))
 
+logger <- setup_ModalWithLog()
 
 databasesHandlers <- helper_createNewDatabaseHandlers(withEunomiaCohorts = FALSE)
 
@@ -19,17 +20,7 @@ r_workbench <- shiny::reactiveValues(
 # run module --------------------------------------------------------------
 devtools::load_all(".")
 
-# shiny::shinyApp(
-#   shiny::fluidPage(
-#     mod_importCohortsFromFile_ui("test")
-#   ),
-#   function(input,output,session){
-#     mod_importCohortsFromFile_server("test", r_connectionHandlers, r_workbench)
-#   }
-# )
-
-
-shiny::shinyApp(
+app <- shiny::shinyApp(
   shiny::fluidPage(
     mod_cohortWorkbench_ui("test"),
     mod_importCohortsFromFile_ui("test")
@@ -37,10 +28,12 @@ shiny::shinyApp(
   function(input,output,session){
     mod_importCohortsFromFile_server("test", r_connectionHandlers, r_workbench)
     mod_cohortWorkbench_server("test", r_connectionHandlers, r_workbench)
-  }
+  },
+  options = list(launch.browser=TRUE)
 )
 
-
+app$appOptions$logger  <- logger
+app
 
 
 # connectionStatus_reactable ----------------------------------------------

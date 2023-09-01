@@ -1,11 +1,11 @@
 DBMS:
-sqlite
+bigquery
 
 Error:
-no such table: tmp_cohortdata
+java.sql.SQLException: [Simba][BigQueryJDBCDriver](100032) Error executing query job. Message: Not found: Table atlas-development-270609:sandbox.w9fnw93stmp_cohortdata was not found in location europe-west1
 
 SQL:
-DELETE FROM tmp_cohortdata
+DELETE FROM atlas-development-270609.sandbox.w9fnw93stmp_cohortdata WHERE True
 
 R version:
 R version 4.3.0 (2023-04-21)
@@ -23,6 +23,6 @@ Attached base packages:
 - base
 
 Other attached packages:
-- CohortOperations2 (0.0.0.9000)
 - shiny (1.7.5)
+- CohortOperations2 (0.0.0.9000)
 - testthat (3.1.10)

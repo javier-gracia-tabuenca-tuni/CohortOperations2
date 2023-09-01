@@ -5,7 +5,7 @@ mod_appendCohort_ui <- function() {
 
 
 mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toAdd ){
-  moduleServer( id, function(input, output, session){
+  shiny::moduleServer( id, function(input, output, session){
     ns <- session$ns
 
     #
@@ -19,9 +19,9 @@ mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toA
     #
     # if r_appendCohort is modified
     #
-    observeEvent(r_toAdd$cohortDefinitionSet, {
-      req(r_toAdd$databaseName)
-      req(r_toAdd$cohortDefinitionSet)
+    shiny::observeEvent(r_toAdd$cohortDefinitionSet, {
+      shiny::req(r_toAdd$databaseName)
+      shiny::req(r_toAdd$cohortDefinitionSet)
 
       cohortTableHandler <- r_connectionHandlers$databasesHandlers[[r_toAdd$databaseName]]$cohortTableHandler
 
@@ -58,8 +58,11 @@ mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toA
     # confirmSweetAlert replaceQuestion_alert
     #
     shiny::observeEvent(r$replaceQuestion, {
-      req(r_toAdd$databaseName)
-      req(r_toAdd$cohortDefinitionSet)
+      shiny::req(r_toAdd$databaseName)
+      shiny::req(r_toAdd$cohortDefinitionSet)
+
+      sweetAlert_spinner("Processing cohorts")
+
       cohortTableHandler <- r_connectionHandlers$databasesHandlers[[r_toAdd$databaseName]]$cohortTableHandler
       #browser()
       if(r$replaceQuestion){
@@ -91,9 +94,11 @@ mod_appendCohort_server <- function(id, r_connectionHandlers, r_workbench, r_toA
 
       # pass action
       r$appendAcceptedCounter <- r$appendAcceptedCounter+1
+
+      remove_sweetAlert_spinner()
     })
 
 
-    return(reactive(r$appendAcceptedCounter))
+    return(shiny::reactive(r$appendAcceptedCounter))
   })
 }

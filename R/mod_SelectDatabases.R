@@ -1,6 +1,9 @@
 mod_selectDatabases_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
+    # imports
+    shinyWidgets::useSweetAlert(),
+    #
     shiny::h2("Databases connection"),
     shiny::br(),
     shiny::p("CohortOperations can connect to one or more databases. By default, it will connect only to the top database."),
@@ -13,13 +16,7 @@ mod_selectDatabases_ui <- function(id) {
   )
 }
 
-#' select_configuration Server Functions
-#'
-#' @noRd
-#' @importFrom reactable renderReactable reactable colDef
-#' @importFrom shiny observeEvent
-#' @importFrom dplyr bind_rows
-#'
+
 mod_selectDatabases_server <- function(id, configurationList, r_connectionHandlers) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -29,6 +26,7 @@ mod_selectDatabases_server <- function(id, configurationList, r_connectionHandle
         dplyr::mutate(databaseName = "") |>
         dplyr::relocate(databaseName, .before = 1)
     )
+
 
     output$selectDatabases_pickerInput_uiOutput <- shiny::renderUI({
 
@@ -57,16 +55,18 @@ mod_selectDatabases_server <- function(id, configurationList, r_connectionHandle
     })
 
 
-
     shiny::observeEvent(input$selectDatabases_pickerInput, {
+
+      sweetAlert_spinner("Connecting to databases")
 
       selectedConfigurationList <- configurationList[input$selectDatabases_pickerInput]
 
       databasesHandlers <- fct_configurationListToDatabasesHandlers(selectedConfigurationList)
       r_connectionHandlers$databasesHandlers <- databasesHandlers
 
-    })
+      remove_sweetAlert_spinner()
 
+    })
 
     shiny::observeEvent(r_connectionHandlers$databasesHandlers, {
 

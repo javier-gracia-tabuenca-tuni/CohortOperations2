@@ -8,7 +8,8 @@ mod_importCohortsFromFile_ui <- function(id) {
     shiny::uiOutput(ns("selectDatabases_pickerInput_uiOutput")),
     shiny::fileInput(ns("uploadedFile"), "Choose a file in cohortData format:",
                      multiple = FALSE,
-                     accept = c("text/tsv", "text/tabular-separated-values,text/plain", ".tsv")
+                     accept = c("text/tsv", "text/tabular-separated-values,text/plain", ".tsv",
+                                "text/csv", "text/comma-separated-values,text/plain", ".csv")
     ),
     htmltools::hr(),
     reactable::reactableOutput(ns("cohorts_reactable")), # %>% ui_load_spiner(),
@@ -101,7 +102,7 @@ mod_importCohortsFromFile_server <- function(id, r_connectionHandlers, r_workben
     })
 
     # reactive function to get selected values
-    r_selectedIndex <- reactive(reactable::getReactableState("cohorts_reactable", "selected", session))
+    r_selectedIndex <- shiny::reactive(reactable::getReactableState("cohorts_reactable", "selected", session))
 
     #
     # button import selected: checks selected cohorts
