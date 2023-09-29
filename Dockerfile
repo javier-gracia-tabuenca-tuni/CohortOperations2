@@ -50,15 +50,16 @@ RUN --mount=type=secret,id=build_github_pat \
 
 
 # install the jdbc drivers for database access using the OHDSI DatabaseConnector R package
-ENV DATABASECONNECTOR_JAR_FOLDER="/root/hades/jdbc_drivers/bigquery"
+# ENV DATABASECONNECTOR_JAR_FOLDER="/root/hades/jdbc_drivers"
 # installing the latest drivers gives errors
 # RUN R -e "DatabaseConnector::downloadJdbcDrivers('bigquery')"
 
+RUN git pull
+
 RUN mkdir -p /root/hades/jdbc_drivers
-COPY ./bq_drivers_1.2.14.zip /root/hades/jdbc_drivers
-RUN unzip /root/hades/jdbc_drivers/bq_drivers_1.2.14.zip
+RUN unzip /root/CohortOperations2/bq_drivers_1.2.14.zip -d /root/hades/jdbc_drivers
 
 EXPOSE 8787
 EXPOSE 8888
 
-ENTRYPOINT ["/usr/local/bin/R", "-e", "devtools::load_all('.');run_app(testthat::test_path('config', 'test_config_devatlas.yml'), options = list(port=8888))"]
+#CMD ["/usr/local/bin/R", "-e", "devtools::load_all('.');run_app(testthat::test_path('config', 'test_config_sandbox6.yml'), options = list(port=8888))"]
