@@ -55,6 +55,9 @@ mod_timeCodeWAS_ui <- function(id) {
     shiny::tags$br(),
     shiny::downloadButton(ns("download_actionButton"), "Download"),
     shiny::actionButton(ns("view_actionButton"), "Open Viewer"),
+    #
+    htmltools::hr(),
+    mod_timeCodeWASVisualization_ui(ns("timeCodeWAS_visualization")),
   )
 }
 
@@ -273,6 +276,12 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
         write.csv(r$timeCodeWasCounts, fname)
       }
     )
+
+    shiny::observeEvent(input$view_actionButton, {
+      req(rf_timeCodeWasCounts)
+
+      mod_timeCodeWASVisualization_server("timeCodeWAS_visualization", rf_timeCodeWasCounts())
+    })
 
 
 

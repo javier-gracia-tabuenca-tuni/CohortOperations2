@@ -85,7 +85,14 @@ app_ui <- function(request) {
               title = shiny::tagList(shiny::icon("connectdevelop"), "TimeCodeWAS:"),
               solidHeader = TRUE, width = 12,
               mod_timeCodeWAS_ui("timeCodeWAS")
+            ),
+            ### Visualize TimeCodeWAS
+            shinydashboard::box(
+              title = shiny::tagList(shiny::icon("connectdevelop"), "TimeCodeWASViz:"),
+              solidHeader = TRUE, width = 12,
+              mod_timeCodeWASVisualization_ui("timeCodeWAS_visualization")
             )
+
           )
         )
       )
