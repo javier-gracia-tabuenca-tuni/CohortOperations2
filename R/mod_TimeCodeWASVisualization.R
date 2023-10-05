@@ -6,30 +6,11 @@ mod_timeCodeWASVisualization_ui <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::fluidPage(
-    htmltools::tagList(
-      shinyjs::useShinyjs(),
-      shiny::tags$h4("CodeWAS Visualization"),
-      ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "400px"),
-      shiny::column(3,
-                    shiny::checkboxInput(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
-                    shiny::checkboxInput(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
-                    shiny::checkboxInput(ns("measurement"), label = "Measurement", value = TRUE),
-                    shiny::checkboxInput(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
-      ),
-      shiny::column(3,
-                    shiny::checkboxInput(ns("show_labels"), label = "Label outstanding", value = FALSE),
-                    shiny::sliderInput(ns("cases_per"),label="Cases % must be at least", min = 20, max = 100, post  = " %", value = 30)
-      ),
-      shiny::column(2,
-                    # shiny::actionButton(ns("show_table"), label = "Show table"),
-                    shiny::actionButton(ns("unselect"), label = "Unselect"),
-      )
-    )
+       uiOutput(ns("visualization_ui")),
   )
 }
 
-build_plot <- function(studyResult, values){
-  # browser()
+.build_plot <- function(studyResult, values){
 
   # get time_periods
   l <- unique(studyResult$timeRange)
@@ -93,11 +74,6 @@ build_plot <- function(studyResult, values){
       )
     )
 
-  # studyResult_fig |> dplyr::filter(!stringr::str_detect(label, "observation "))
-
-  # View(studyResult_fig)
-  # browser()
-
   return(studyResult_fig)
 }
 
@@ -111,7 +87,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     values <- reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL)
 
-    values$gg_data_full <- values$gg_data <- build_plot(r_studyResult, values)
+    values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
     observeEvent(c(input$condition_occurrence, input$drug_exposure, input$measurement, input$procedure_occurrence),{
       # browser()
@@ -123,9 +99,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
       values$gg_data <- values$gg_data_full |>
         dplyr::filter(domain %in% domains)
-
-      # View(gg_data())
-      # browser()
 
     }, ignoreInit = FALSE)
 
@@ -141,11 +114,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     observeEvent(input$codeWASplot_selected, {
       selected_rows <- input$codeWASplot_selected
 
-      # if(!is.null(selected_rows))
-      #   message("codeWASplot_selected ",toString(selected_rows))
-      # else
-      #   message("selected_rows NULL")
-
       values$selection <- values$gg_data |>
         dplyr::filter(code %in% selected_rows) |>
         dplyr::arrange(code, time_period) |>
@@ -153,16 +121,35 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         dplyr::mutate(name = ifelse(!is.na(position), paste0("panel-1-", position), "NA")) |>
         dplyr::select(code, domain, name, cases_per, controls_per)
 
-      # View(values$selection)
-      # browser()
-
     }, ignoreInit = TRUE)
 
+    output$visualization_ui <- renderUI({
+      req(r_studyResult)
 
-    # values$gg_plot <- build_plot(r_studyResult)
+      htmltools::tagList(
+        shinyjs::useShinyjs(),
+        shiny::tags$h4("CodeWAS Visualization"),
+        ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "400px"),
+        shiny::column(3,
+                      shiny::checkboxInput(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
+                      shiny::checkboxInput(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
+                      shiny::checkboxInput(ns("measurement"), label = "Measurement", value = TRUE),
+                      shiny::checkboxInput(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
+        ),
+        shiny::column(3,
+                      shiny::checkboxInput(ns("show_labels"), label = "Label outstanding", value = FALSE),
+                      shiny::sliderInput(ns("cases_per"),label="Cases % must be at least", min = 20, max = 100, post  = " %", value = 30)
+        ),
+        shiny::column(2,
+                      # shiny::actionButton(ns("show_table"), label = "Show table"),
+                      shiny::actionButton(ns("unselect"), label = "Unselect"),
+        )
+      )
+
+    })
+
 
     output$codeWASplot <- ggiraph::renderGirafe({
-      # browser()
 
       if(is.null(values$gg_data)) return()
       # adjust the label area according to facet width
