@@ -6,7 +6,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
   ns <- shiny::NS(id)
 
   shiny::fluidPage(
-       uiOutput(ns("visualization_ui")),
+       shiny::uiOutput(ns("visualization_ui")),
   )
 }
 
@@ -40,7 +40,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
     dplyr::mutate(p = dplyr::if_else(p==0, 10^-323, p))
 
   studyResult_fig <- studyResult |>
-    dplyr::filter(p<0.01) |>
+    # dplyr::filter(p<0.00001) |>
+    dplyr::filter(p<0.1) |>
     dplyr::arrange(time_period, name) |>
     dplyr::mutate_if(is.character, stringr::str_replace_na, "") |>
     dplyr::mutate(
@@ -74,6 +75,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
       )
     )
 
+  # View(studyResult_fig)
+  # browser()
   return(studyResult_fig)
 }
 
@@ -114,6 +117,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     observeEvent(input$codeWASplot_selected, {
       selected_rows <- input$codeWASplot_selected
 
+      # browser()
+
       values$selection <- values$gg_data |>
         dplyr::filter(code %in% selected_rows) |>
         dplyr::arrange(code, time_period) |>
@@ -131,13 +136,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         shiny::tags$h4("CodeWAS Visualization"),
         ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "400px"),
         shiny::column(3,
-                      shiny::checkboxInput(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
-                      shiny::checkboxInput(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
-                      shiny::checkboxInput(ns("measurement"), label = "Measurement", value = TRUE),
-                      shiny::checkboxInput(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
+                      shinyWidgets::awesomeCheckbox(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
+                      shinyWidgets::awesomeCheckbox(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
+                      shinyWidgets::awesomeCheckbox(ns("measurement"), label = "Measurement", value = TRUE),
+                      shinyWidgets::awesomeCheckbox(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
         ),
         shiny::column(3,
-                      shiny::checkboxInput(ns("show_labels"), label = "Label outstanding", value = FALSE),
+                      shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Label outstanding", value = FALSE),
                       shiny::sliderInput(ns("cases_per"),label="Cases % must be at least", min = 20, max = 100, post  = " %", value = 30)
         ),
         shiny::column(2,
@@ -148,12 +153,20 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     })
 
+    # simplify facet labels
+    label_editor <- function(s){
+      s <- stringr::str_remove(s, "from ")
+      s <- stringr::str_replace(s, "to", " / ")
+    }
 
     output$codeWASplot <- ggiraph::renderGirafe({
 
       if(is.null(values$gg_data)) return()
       # adjust the label area according to facet width
       facet_x_max <- max(values$gg_data$controls_per, na.rm = TRUE)
+      #
+      # browser()
+      # message("plotting ", nrow(values$gg_data))
       #
       gg_fig <- ggplot2::ggplot(
         data = dplyr::arrange(values$gg_data, log10_OR),
@@ -191,11 +204,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ggplot2::scale_x_continuous(breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10), limits = c(-0.05, NA), expand = c(0.2, 0)) +
         ggplot2::scale_y_continuous(breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10), limits = c(0, NA), expand = c(0, 0.05)) +
         ggplot2::coord_fixed() +
-        ggplot2::facet_grid(.~GROUP, scales = "fixed")+
+        ggplot2::facet_grid(.~GROUP, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+
         ggplot2::theme_minimal()+
         ggplot2::theme(
           legend.key.height = grid::unit(5, "mm"),
-          legend.key.width = grid::unit(10, "mm")
+          legend.key.width = grid::unit(10, "mm"),
+          legend.position = "bottom",
+          legend.direction = "vertical"
         ) +
         ggplot2::scale_color_manual(values = c("darkgray")) +
         ggplot2::scale_fill_manual(values = c(
@@ -204,10 +219,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           "measurement" = "palegreen",
           "procedure_occurrence" = "plum1"),
           labels = c(
-            "Condition occurrence",
-            "Drug exposure",
-            "Measurement",
-            "Procedure occurrence"
+            "condition_occurrence" = "Condition occurrence",
+            "drug_exposure" = "Drug exposure",
+            "measurement" ="Measurement",
+            "procedure_occurrence" = "Procedure occurrence"
           )
         ) +
         ggplot2::guides(color = "none", fill = ggplot2::guide_legend(override.aes = list(size = 5))) +
@@ -232,11 +247,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           x_range <-  ranges[[1]][["x.range"]]
           y_range <- ranges[[1]][["y.range"]]
 
-          selection <- dplyr::left_join(selection, g$layout, by = "name") |>
+          selection <- dplyr::inner_join(selection, g$layout, by = "name") |>
             dplyr::mutate(controls_per = data2npc(controls_per, x_range)) |>
             dplyr::mutate(cases_per = data2npc(cases_per, y_range))
           selection$z <- 1
           selection$clip <- "off"
+
+          # print(selection)
 
           # move to the beginning of selection
           g <- gtable::gtable_add_grob(
@@ -244,6 +261,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
             t = selection[1,]$t, selection[1,]$l, z = z_val)
           # draw the lines
           for(i in 2:nrow(selection)){
+            if(is.na(selection[i,]$t) || is.na(selection[i,]$l))
+              next
             g <- gtable::gtable_add_grob(
               g, grid::lineToGrob(selection[i,]$controls_per, selection[i,]$cases_per, gp = grid::gpar(col = "red", alpha = 0.3, lwd = 2.5)),
               t = selection[i,]$t, selection[i,]$l, z = z_val)
@@ -259,7 +278,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       if(is.na(selected_items)) selected_items <- ""
       # message("selected_items: ", toString(selected_items))
 
-      gg_girafe <- ggiraph::girafe(ggobj = ggplotify::as.ggplot(g), width_svg = 16)
+      gg_girafe <- ggiraph::girafe(ggobj = ggplotify::as.ggplot(g), width_svg = 15)
       gg_girafe <- ggiraph::girafe_options(gg_girafe,
                                            ggiraph::opts_sizing(rescale = TRUE, width = 1.0),
                                            ggiraph::opts_hover(css = "fill-opacity:1;fill:red;stroke:black;"),

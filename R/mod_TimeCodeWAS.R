@@ -40,8 +40,11 @@ mod_timeCodeWAS_ui <- function(id) {
       selected = c("useConditionOccurrence", "useDrugExposure", "useProcedureOccurrence", "useDeviceExposure", "useMeasurement", "useObservation"),
       options = list(`actions-box` = TRUE),
       multiple = TRUE),
-    shiny::tags$h5("Select ranges"),
+    # shiny::tags$h5("Select ranges"),
+    # mod_temporalRanges_ui(ns("selectRanges")),
+    htmltools::hr(),
     mod_temporalRanges_ui(ns("selectRanges")),
+    shiny::tags$br(),
     #
     htmltools::hr(),
     shiny::tags$h4("Summary"),
@@ -54,7 +57,7 @@ mod_timeCodeWAS_ui <- function(id) {
     reactable::reactableOutput(ns("reactableResults")),
     shiny::tags$br(),
     shiny::downloadButton(ns("download_actionButton"), "Download"),
-    shiny::actionButton(ns("view_actionButton"), "Open Viewer"),
+    shiny::actionButton(ns("view_actionButton"), "Update Viewer"),
     #
     htmltools::hr(),
     mod_timeCodeWASVisualization_ui(ns("timeCodeWAS_visualization")),
