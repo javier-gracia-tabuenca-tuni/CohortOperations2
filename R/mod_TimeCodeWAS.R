@@ -69,8 +69,6 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-
-
     #
     # reactive variables
     #

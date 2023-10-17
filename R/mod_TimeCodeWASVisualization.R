@@ -11,6 +11,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 }
 
 .build_plot <- function(studyResult, values){
+  req(studyResult)
 
   # get time_periods
   l <- unique(studyResult$timeRange)
@@ -93,7 +94,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
     observeEvent(c(input$condition_occurrence, input$drug_exposure, input$measurement, input$procedure_occurrence),{
-      # browser()
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c(domains, "condition_occurrence")
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
