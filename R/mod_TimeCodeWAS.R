@@ -227,7 +227,6 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
         #
         ParallelLogger::logInfo("Start timeCodeWasCounts")
         temporalCovariateSettings <- do.call(FeatureExtraction::createTemporalCovariateSettings, studySettings$temporalCovariateSettings)
-        #browser()
         timeCodeWasCounts <- HadesExtras::CohortDiagnostics_runTimeCodeWAS(
           connection = cohortTableHandler$connectionHandler$getConnection(),
           cdmDatabaseSchema = cohortTableHandler$cdmDatabaseSchema,
@@ -279,7 +278,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     )
 
     shiny::observeEvent(input$view_actionButton, {
-      req(rf_timeCodeWasCounts)
+      shiny::req(rf_timeCodeWasCounts)
 
       mod_timeCodeWASVisualization_server("timeCodeWAS_visualization", rf_timeCodeWasCounts())
     })

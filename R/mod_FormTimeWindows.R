@@ -58,11 +58,11 @@ mod_temporalRanges_server <- function(id, session) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    days_before <- reactive({ floor(input$years_before * 365.25) })
-    days_after <- reactive({ ceiling(input$years_after * 365.25) })
+    days_before <- shiny::reactive({ floor(input$years_before * 365.25) })
+    days_after <- shiny::reactive({ ceiling(input$years_after * 365.25) })
 
     windows <- function(n){
-      req(days_before(), days_after())
+      shiny::req(days_before(), days_after())
 
       c( round( seq(days_before(), days_after(), (days_after() - days_before()) / n) ) )
     }
@@ -77,30 +77,30 @@ mod_temporalRanges_server <- function(id, session) {
       dt
     }
 
-    observeEvent(c(days_before, days_after), {
+    shiny::observeEvent(c(days_before, days_after), {
       shinyWidgets::updateNoUiSliderInput(
         inputId = ns("the_slider"),
         range = c(days_before(), days_after())
       )
     })
 
-    output$slider_value <- renderTable({
-      req(input$the_slider)
+    output$slider_value <- shiny::renderTable({
+      shiny::req(input$the_slider)
       distance_table(input$the_slider, c("Break", "Days", "Weeks", "Months", "Years"))
     }, digits = 1)
 
-    output$slider_distance <- renderTable({
-      req(input$the_slider)
+    output$slider_distance <- shiny::renderTable({
+      shiny::req(input$the_slider)
       distance_table(diff(input$the_slider), c("Window", "Days", "Weeks", "Months", "Years"))
     }, digits = 1)
 
-    output$slider.ui <- renderUI({
-      req(input$windows, days_before(), days_after())
+    output$slider.ui <- shiny::renderUI({
+      shiny::req(input$windows, days_before(), days_after())
 
-      validate(
-        need(days_before() < 0, "'Years before' needs to be negative"),
-        need(days_after() > 0, "'Years after' needs to be positive"),
-        need(input$windows > 0, "'Windows' needs to be positive")
+      shiny::validate(
+        shiny::need(days_before() < 0, "'Years before' needs to be negative"),
+        shiny::need(days_after() > 0, "'Years after' needs to be positive"),
+        shiny::need(input$windows > 0, "'Windows' needs to be positive")
       )
 
       shinyWidgets::noUiSliderInput(
@@ -123,34 +123,8 @@ mod_temporalRanges_server <- function(id, session) {
       )
     })
 
-    # output$the_slider_output <- renderText({
-    #   req(input$the_slider)
-    #   breaks <- as.vector(input$the_slider)
-    #   toString(
-    #     list(
-    #       temporalStartDays = breaks[1:(length(breaks) - 1)],
-    #       temporalEndDays = breaks[2:length(breaks)]
-    #     )
-    #   )
-    # })
-
     shiny::reactive({
-      #browser()
-      # temporalStartDays <- c()
-      # temporalEndDays <- c()
-      #
-      # # listOutputRanges <- r$listOutputRanges
-      #
-      # if(length(listOutputRanges)!=0){
-      #   for (i in 1:length(listOutputRanges)) {
-      #     range <- listOutputRanges[[i]]()
-      #     if(!is.null(range)){
-      #       temporalStartDays <- c(temporalStartDays, range[1])
-      #       temporalEndDays <- c(temporalEndDays, range[2])
-      #     }
-      #   }
-      # }
-      req(input$the_slider)
+      shiny::req(input$the_slider)
       breaks <- as.vector(input$the_slider)
 
       list(

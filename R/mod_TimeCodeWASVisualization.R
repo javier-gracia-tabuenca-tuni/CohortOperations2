@@ -89,7 +89,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    values <- reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL)
+    values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL)
 
     values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
