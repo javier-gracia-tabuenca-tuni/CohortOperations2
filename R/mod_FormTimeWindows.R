@@ -4,7 +4,7 @@ mod_temporalRanges_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
     shiny::tags$h4("Time windows"),
-    shiny::tags$div(style = "margin-left: 50px; margin-right: 100px; min-width: 800px;",
+    shiny::tags$div(style = "margin-left: 50px; margin-right: 100px; min-width: 600px;",
                     # shiny::tags$div(id=ns('inputList')),
                     # shiny::actionButton(ns('addBtn'), 'Add Window'),
                     shiny::br(),

@@ -30,8 +30,8 @@ dev_bigquery:
         dbms: bigquery
         user: ""
         password: ""
-        connectionString: jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;ProjectId=atlas-development-270609;OAuthType=0;OAuthServiceAcctEmail=146473670970-compute@developer.gserviceaccount.com;OAuthPvtKeyPath=/Users/hs/keys/atlas-development-270609-0c4bdf74dad0.json;Timeout=100000;
-        pathToDriver: /Users/hs/Library/JDBC/bigquery
+        connectionString: jdbc:bigquery://https://www.googleapis.com/bigquery/v2:443;ProjectId=atlas-development-270609;OAuthType=0;OAuthServiceAcctEmail=146473670970-compute@developer.gserviceaccount.com;OAuthPvtKeyPath=/root/CohortOperations2/keys/atlas-development-270609-0c4bdf74dad0.json;Timeout=100000;
+        pathToDriver: /root/hades/jdbc_drivers
       tempEmulationSchema: atlas-development-270609.sandbox #optional
       useBigrqueryUpload: true #optional
     cdm:

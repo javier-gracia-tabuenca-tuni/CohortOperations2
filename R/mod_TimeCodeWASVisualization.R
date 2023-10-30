@@ -42,7 +42,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 
   studyResult_fig <- studyResult |>
     # dplyr::filter(p<0.00001) |>
-    dplyr::filter(p<0.1) |>
+    # dplyr::filter(p<0.05) |>
+    dplyr::filter(p < values$p_limit) |>
     dplyr::arrange(time_period, name) |>
     dplyr::mutate_if(is.character, stringr::str_replace_na, "") |>
     dplyr::mutate(
@@ -89,11 +90,14 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL)
+    values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL, p_limit = 0.001)
 
     values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
-    observeEvent(c(input$condition_occurrence, input$drug_exposure, input$measurement, input$procedure_occurrence),{
+    observeEvent(c(input$condition_occurrence, input$drug_exposure, input$measurement, input$procedure_occurrence, input$p_limit),{
+      values$p_limit <- input$p_limit
+      values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
+
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c(domains, "condition_occurrence")
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
@@ -128,6 +132,9 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     }, ignoreInit = TRUE)
 
+    #
+    # renderUI ####
+    #
     output$visualization_ui <- renderUI({
       req(r_studyResult)
 
@@ -143,11 +150,12 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ),
         shiny::column(3,
                       shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Label outstanding", value = FALSE),
-                      shiny::sliderInput(ns("cases_per"),label="Cases % must be at least", min = 20, max = 100, post  = " %", value = 30)
+                      shiny::sliderInput(ns("cases_per"),label="Cases % must be at least", min = 20, max = 100, post  = " %", value = 30),
         ),
         shiny::column(2,
                       # shiny::actionButton(ns("show_table"), label = "Show table"),
                       shiny::actionButton(ns("unselect"), label = "Unselect"),
+                      shiny::sliderInput(ns("p_limit"),label="p limit", min = 0.00001, max = 0.5, post  = " < p", value = isolate(values$p_limit)),
         )
       )
 
@@ -201,10 +209,16 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
             xlim = c(facet_x_max / 4, NA),
             box.padding = 0.8
           )} +
-        ggplot2::scale_x_continuous(breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10), limits = c(-0.05, NA), expand = c(0.2, 0)) +
-        ggplot2::scale_y_continuous(breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10), limits = c(0, NA), expand = c(0, 0.05)) +
+        ggplot2::scale_x_continuous(
+          breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10),
+          limits = c(-0.05, NA), expand = ggplot2::expansion(add = c(0.0, 0.05))
+        ) +
+        ggplot2::scale_y_continuous(
+          breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10),
+          limits = c(0, NA), ggplot2::expansion(add = c(0, 0.05))
+        ) +
         ggplot2::coord_fixed() +
-        ggplot2::facet_grid(.~GROUP, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+
+        ggplot2::facet_grid(.~GROUP, drop = FALSE, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+
         ggplot2::theme_minimal()+
         ggplot2::theme(
           legend.key.height = grid::unit(5, "mm"),
@@ -226,9 +240,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           )
         ) +
         ggplot2::guides(color = "none", fill = ggplot2::guide_legend(override.aes = list(size = 5))) +
-        ggplot2::labs(size = "p value group", fill = "Domain") +
-        ggplot2::xlab("\nControls %") +
-        ggplot2::ylab("Cases %\n")
+        ggplot2::labs(size = "p value group", fill = "Domain", x = "\nControls %", y = "Cases %")
 
       gb <- ggplot2::ggplot_build(gg_fig)
       g <- ggplot2::ggplot_gtable(gb)
