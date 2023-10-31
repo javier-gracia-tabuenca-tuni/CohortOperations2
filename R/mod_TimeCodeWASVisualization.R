@@ -90,7 +90,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL, p_limit = 0.001)
+    values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL, p_limit = 0.05)
 
     values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
@@ -141,7 +141,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       htmltools::tagList(
         shinyjs::useShinyjs(),
         shiny::tags$h4("CodeWAS Visualization"),
-        ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "400px"),
+        ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "100%"),
+        shiny::hr(style = "margin-top: -20px;"),
         shiny::column(3,
                       shinyWidgets::awesomeCheckbox(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
                       shinyWidgets::awesomeCheckbox(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
@@ -150,12 +151,18 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ),
         shiny::column(3,
                       shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Label outstanding", value = FALSE),
-                      shiny::sliderInput(ns("cases_per"),label="Cases % must be at least", min = 20, max = 100, post  = " %", value = 30),
+                      shiny::sliderInput(ns("cases_per"), label="Cases % must be at least",
+                                         min = 20, max = 100, post  = " %", width = "200px",
+                                         value = 30
+                      ),
         ),
-        shiny::column(2,
+        shiny::column(3,
                       # shiny::actionButton(ns("show_table"), label = "Show table"),
                       shiny::actionButton(ns("unselect"), label = "Unselect"),
-                      shiny::sliderInput(ns("p_limit"),label="p limit", min = 0.00001, max = 0.5, post  = " < p", value = isolate(values$p_limit)),
+                      shiny::sliderInput(ns("p_limit"), label="p limit",
+                                         min = 0.00001, max = 0.5, pre  = "p < ", width = "200px",
+                                         value = isolate(values$p_limit)
+                      ),
         )
       )
 
@@ -167,11 +174,15 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       s <- stringr::str_replace(s, "to", " / ")
     }
 
+    #
+    # renderGirafe ####
+    #
+
     output$codeWASplot <- ggiraph::renderGirafe({
 
       if(is.null(values$gg_data)) return()
       # adjust the label area according to facet width
-      facet_x_max <- max(values$gg_data$controls_per, na.rm = TRUE)
+      facet_max <- max(values$gg_data$controls_per, values$gg_data$cases_per, 0.03, na.rm = TRUE)
       #
       # browser()
       # message("plotting ", nrow(values$gg_data))
@@ -189,13 +200,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           # onclick = paste0('window.open("', link , '")')
         ), alpha = 0.75)+
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = facet_x_max, yend = facet_x_max),
+          ggplot2::aes(x = 0, y = 0, xend = facet_max, yend = facet_max),
           color = "red", alpha = 0.5, linewidth = 0.5, linetype = "dashed") +
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = facet_x_max, yend = 0),
+          ggplot2::aes(x = 0, y = 0, xend = facet_max, yend = 0),
           color = "black", alpha = 0.5, linewidth = 0.5, linetype = "dashed") +
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = 0, yend = facet_x_max),
+          ggplot2::aes(x = 0, y = 0, xend = 0, yend = facet_max),
           color = "black", alpha = 0.5, linewidth = 0.5, linetype = "dashed") +
         ggiraph::geom_point_interactive(
           ggplot2::aes(size = ordered(p_group)), show.legend=T, shape = 21) + #, position = position_dodge(width = 12))+
@@ -206,16 +217,18 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
             max.overlaps = Inf,
             size = 2.5,
             hjust = 0.1,
-            xlim = c(facet_x_max / 4, NA),
+            xlim = c(facet_max / 4, NA),
             box.padding = 0.8
           )} +
         ggplot2::scale_x_continuous(
-          breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10),
-          limits = c(-0.05, NA), expand = ggplot2::expansion(add = c(0.0, 0.05))
+          breaks = seq(0,1.0, 0.05),
+          labels = seq(0, 100, 5),
+          limits = c(-0.01, facet_max) #, expand = ggplot2::expansion(add = c(0.0, 0.05))
         ) +
         ggplot2::scale_y_continuous(
-          breaks = seq(0,0.7, 0.1), labels = seq(0,70, 10),
-          limits = c(0, NA), ggplot2::expansion(add = c(0, 0.05))
+          breaks = seq(0,0.8, 0.05),
+          labels = seq(0,80, 5),
+          limits = c(0, facet_max), expand = ggplot2::expansion(add = c(0, 0.01))
         ) +
         ggplot2::coord_fixed() +
         ggplot2::facet_grid(.~GROUP, drop = FALSE, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+
