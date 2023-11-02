@@ -15,7 +15,7 @@ mod_temporalRanges_ui <- function(id) {
                           width = "300px",
                           shiny::numericInput(
                             ns("years_before"),
-                            "Years before", min = -50, max = -1, value = -5, width = "33%"))
+                            "Years before", min = -100, max = -1, value = -5, width = "33%"))
                       ),
                       shiny::column(
                         2,
@@ -23,7 +23,7 @@ mod_temporalRanges_ui <- function(id) {
                           width = "300px",
                           shiny::numericInput(
                             ns("years_after"),
-                            "Years after", min = 1, max = 50, value = 5, width = "33%"))
+                            "Years after", min = 1, max = 100, value = 5, width = "33%"))
                       ),
                       shiny::column(
                         2,

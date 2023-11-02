@@ -160,7 +160,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                       # shiny::actionButton(ns("show_table"), label = "Show table"),
                       shiny::actionButton(ns("unselect"), label = "Unselect"),
                       shiny::sliderInput(ns("p_limit"), label="p limit",
-                                         min = 0.00001, max = 0.5, pre  = "p < ", width = "200px",
+                                         min = 0.00001, max = 1.00, pre  = "p < ", width = "400px",
                                          value = isolate(values$p_limit)
                       ),
         )
@@ -201,13 +201,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ), alpha = 0.75)+
         ggplot2::geom_segment(
           ggplot2::aes(x = 0, y = 0, xend = facet_max, yend = facet_max),
-          color = "red", alpha = 0.5, linewidth = 0.5, linetype = "dashed") +
+          color = "red", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggplot2::geom_segment(
           ggplot2::aes(x = 0, y = 0, xend = facet_max, yend = 0),
-          color = "black", alpha = 0.5, linewidth = 0.5, linetype = "dashed") +
+          color = "black", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggplot2::geom_segment(
           ggplot2::aes(x = 0, y = 0, xend = 0, yend = facet_max),
-          color = "black", alpha = 0.5, linewidth = 0.5, linetype = "dashed") +
+          color = "black", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggiraph::geom_point_interactive(
           ggplot2::aes(size = ordered(p_group)), show.legend=T, shape = 21) + #, position = position_dodge(width = 12))+
         {if(input$show_labels)
@@ -221,14 +221,14 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
             box.padding = 0.8
           )} +
         ggplot2::scale_x_continuous(
-          breaks = seq(0,1.0, 0.05),
-          labels = seq(0, 100, 5),
+          breaks = seq(0, 0.8, 0.1),
+          labels = seq(0, 80, 10),
           limits = c(-0.01, facet_max) #, expand = ggplot2::expansion(add = c(0.0, 0.05))
         ) +
         ggplot2::scale_y_continuous(
-          breaks = seq(0,0.8, 0.05),
-          labels = seq(0,80, 5),
-          limits = c(0, facet_max), expand = ggplot2::expansion(add = c(0, 0.01))
+          breaks = seq(0, 0.8, 0.1),
+          labels = seq(0,80, 10),
+          limits = c(-0.01, facet_max), expand = ggplot2::expansion(add = c(0, 0.01))
         ) +
         ggplot2::coord_fixed() +
         ggplot2::facet_grid(.~GROUP, drop = FALSE, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+

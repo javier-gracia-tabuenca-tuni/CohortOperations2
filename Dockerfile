@@ -237,9 +237,17 @@ EXPOSE 8787
 
 #CMD /bin/bash
 
+#ENTRYPOINT ["/usr/local/bin/R", "-e", \
+#            "devtools::load_all('.'); \
+#            run_app(testthat::test_path('config', 'test_config_eunomia.yml'), options = list(host='0.0.0.0', port=8787))"]
+
+#ENTRYPOINT ["/usr/local/bin/R", "-e", \
+#            "devtools::load_all('.'); \
+#            run_app(testthat::test_path('config', 'test_config_devatlas_hs.yml'), options = list(host='0.0.0.0', port=8787))"]
+
 ENTRYPOINT ["/usr/local/bin/R", "-e", \
             "devtools::load_all('.'); \
-            run_app(testthat::test_path('config', 'test_config_eunomia.yml'), options = list(host='0.0.0.0', port=8787))"]
+            run_app(testthat::test_path('config', 'test_config_sandbox6.yml'), options = list(host='0.0.0.0', port=8787))"]
 
 ## login as root into running container
 #
