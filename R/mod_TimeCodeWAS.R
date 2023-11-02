@@ -57,10 +57,12 @@ mod_timeCodeWAS_ui <- function(id) {
     reactable::reactableOutput(ns("reactableResults")),
     shiny::tags$br(),
     shiny::downloadButton(ns("download_actionButton"), "Download"),
-    shiny::actionButton(ns("view_actionButton"), "Update Viewer"),
     #
     htmltools::hr(),
+    shiny::tags$h4("CodeWAS Visualization"),
     mod_timeCodeWASVisualization_ui(ns("timeCodeWAS_visualization")),
+    shiny::tags$br(),
+    shiny::actionButton(ns("view_actionButton"), "Update Viewer"),
   )
 }
 

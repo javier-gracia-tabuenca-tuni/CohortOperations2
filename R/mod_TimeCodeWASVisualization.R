@@ -94,6 +94,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
+    #
+    # handlers
+    #
+
     observeEvent(c(input$condition_occurrence, input$drug_exposure, input$measurement, input$procedure_occurrence, input$p_limit),{
       values$p_limit <- input$p_limit
       values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
@@ -140,7 +144,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
       htmltools::tagList(
         shinyjs::useShinyjs(),
-        shiny::tags$h4("CodeWAS Visualization"),
         ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "100%"),
         shiny::hr(style = "margin-top: -20px;"),
         shiny::column(3,
@@ -163,7 +166,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                                          min = 0.00001, max = 1.00, pre  = "p < ", width = "400px",
                                          value = isolate(values$p_limit)
                       ),
-        )
+        ),
+        htmltools::br(),
       )
 
     })
