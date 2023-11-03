@@ -62,7 +62,7 @@ mod_timeCodeWAS_ui <- function(id) {
     shiny::tags$h4("CodeWAS Visualization"),
     mod_timeCodeWASVisualization_ui(ns("timeCodeWAS_visualization")),
     shiny::tags$br(),
-    shiny::actionButton(ns("view_actionButton"), "Update Viewer"),
+    shiny::actionButton(ns("view_actionButton"), "Open CodeWAS Viewer"),
   )
 }
 

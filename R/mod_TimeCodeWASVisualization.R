@@ -98,10 +98,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     # handlers
     #
 
-    observeEvent(c(input$condition_occurrence, input$drug_exposure, input$measurement, input$procedure_occurrence, input$p_limit),{
+    shiny::observeEvent(input$redraw, {
       values$p_limit <- input$p_limit
-      values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
-
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c(domains, "condition_occurrence")
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
@@ -110,8 +108,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
       values$gg_data <- values$gg_data_full |>
         dplyr::filter(domain %in% domains)
-
-    }, ignoreInit = FALSE)
+    })
 
     observeEvent(input$unselect, {
       # remove the previous selection
@@ -160,12 +157,14 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                       ),
         ),
         shiny::column(3,
-                      # shiny::actionButton(ns("show_table"), label = "Show table"),
                       shiny::actionButton(ns("unselect"), label = "Unselect"),
                       shiny::sliderInput(ns("p_limit"), label="p limit",
                                          min = 0.00001, max = 1.00, pre  = "p < ", width = "400px",
                                          value = isolate(values$p_limit)
                       ),
+        ),
+        shiny::column(3,
+                      shiny::actionButton(ns("redraw"), label = "Update CodeWAS")
         ),
         htmltools::br(),
       )
