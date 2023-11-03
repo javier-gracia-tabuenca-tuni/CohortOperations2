@@ -61,7 +61,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
       id = dplyr::row_number(),
       p_group = cut(-log10(p),
                     breaks = c(-1, 50, 100, 200, Inf ),
-                    labels = c("-log10(p) [0,50]", "-log10(p) (50,100]", "-log10(p) (100,200]", "-log10(p) (200,Inf]")
+                    labels = c("-log10(p) [0,50]", "-log10(p) (50,100]", "-log10(p) (100,200]", "-log10(p) (200,Inf]"),
+                    ordered_result = TRUE
       ),
       p_group_size = dplyr::case_when(
         as.integer(p_group)==1 ~ 1L,
@@ -92,6 +93,9 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL, p_limit = 0.05)
 
+    # View(r_studyResult)
+    # browser()
+
     values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
 
     #
@@ -99,7 +103,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
 
     shiny::observeEvent(input$redraw, {
-      values$p_limit <- input$p_limit
+      if(input$p_limit != values$p_limit){
+        values$p_limit <- input$p_limit
+        values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
+      }
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c(domains, "condition_occurrence")
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
@@ -212,7 +219,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           ggplot2::aes(x = 0, y = 0, xend = 0, yend = facet_max),
           color = "black", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggiraph::geom_point_interactive(
-          ggplot2::aes(size = ordered(p_group)), show.legend=T, shape = 21) + #, position = position_dodge(width = 12))+
+          ggplot2::aes(size = p_group), show.legend=T, shape = 21) + #, position = position_dodge(width = 12))+
+        ggplot2::scale_size_manual(values = c(2,4,6,8)) +
         {if(input$show_labels)
           ggrepel::geom_text_repel(
             data = values$gg_data |> dplyr::filter((is.infinite(OR) & cases_per > 0.05) | cases_per > (input$cases_per / 100)),
