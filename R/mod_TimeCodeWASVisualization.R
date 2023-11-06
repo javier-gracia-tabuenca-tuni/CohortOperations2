@@ -13,6 +13,9 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 .build_plot <- function(studyResult, values){
   req(studyResult)
 
+  message(".build_plot")
+  start_time <- Sys.time()
+
   # get time_periods
   l <- unique(studyResult$timeRange)
   l_split <- lapply(l, function(x) {stringr::str_split(x, " ", simplify = TRUE)})
@@ -43,7 +46,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
   studyResult_fig <- studyResult |>
     # dplyr::filter(p<0.00001) |>
     # dplyr::filter(p<0.05) |>
-    dplyr::filter(p < values$p_limit) |>
+    dplyr::filter(p < isolate(values$p_limit)) |>
     dplyr::arrange(time_period, name) |>
     dplyr::mutate_if(is.character, stringr::str_replace_na, "") |>
     dplyr::mutate(
@@ -80,6 +83,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 
   # View(studyResult_fig)
   # browser()
+  print(Sys.time() - start_time)
   return(studyResult_fig)
 }
 
@@ -91,31 +95,34 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    values <- shiny::reactiveValues(selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_full = NULL, p_limit = 0.05)
+    values <- shiny::reactiveValues(
+      selection = NULL, time_periods = NULL, gg_data = NULL, p_limit = 0.05)
 
     # View(r_studyResult)
     # browser()
 
-    values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
+    values$gg_data <- .build_plot(r_studyResult, values)
 
     #
     # handlers
     #
 
     shiny::observeEvent(input$redraw, {
-      if(input$p_limit != values$p_limit){
-        values$p_limit <- input$p_limit
-        values$gg_data_full <- values$gg_data <- .build_plot(r_studyResult, values)
-      }
+      message("input$redraw")
+      # if(input$p_limit != values$p_limit){
+      #   values$p_limit <- input$p_limit
+      values$p_limit <- isolate(input$p_limit)
+      # values$gg_data <- .build_plot(r_studyResult, values)
+      # }
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c(domains, "condition_occurrence")
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
       if(input$measurement == TRUE) domains <- c(domains, "measurement")
       if(input$procedure_occurrence == TRUE) domains <- c(domains, "procedure_occurrence")
 
-      values$gg_data <- values$gg_data_full |>
+      values$gg_data <- .build_plot(r_studyResult, values) |>
         dplyr::filter(domain %in% domains)
-    })
+    }, ignoreInit = TRUE)
 
     observeEvent(input$unselect, {
       # remove the previous selection
@@ -146,6 +153,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     output$visualization_ui <- renderUI({
       req(r_studyResult)
 
+      message("renderUI")
+
       htmltools::tagList(
         shinyjs::useShinyjs(),
         ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "100%"),
@@ -164,16 +173,17 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                       ),
         ),
         shiny::column(3,
-                      shiny::actionButton(ns("unselect"), label = "Unselect"),
                       shiny::sliderInput(ns("p_limit"), label="p limit",
-                                         min = 0.00001, max = 1.00, pre  = "p < ", width = "400px",
-                                         value = isolate(values$p_limit)
+                                         min = 0.00001, max = 0.05, pre  = "p < ", width = "400px",
+                                         value = 0.01
                       ),
         ),
         shiny::column(3,
-                      shiny::actionButton(ns("redraw"), label = "Update CodeWAS")
+                      shiny::actionButton(ns("redraw"), label = "Update CodeWAS"),
+                      shiny::actionButton(ns("unselect"), label = "Unselect"),
         ),
         htmltools::br(),
+        shiny::hr(style = "margin-bottom: 20px;"),
       )
 
     })
@@ -190,12 +200,17 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     output$codeWASplot <- ggiraph::renderGirafe({
 
+      message("renderGirafe")
+      start_time <- Sys.time()
+
       if(is.null(values$gg_data)) return()
       # adjust the label area according to facet width
-      facet_max <- max(values$gg_data$controls_per, values$gg_data$cases_per, 0.03, na.rm = TRUE)
+      # facet_max <- max(values$gg_data$controls_per, values$gg_data$cases_per, 0.03, na.rm = TRUE)
+      facet_max_x <- max(values$gg_data$controls_per, 0.03, na.rm = TRUE)
+      facet_max_y <- max(values$gg_data$cases_per, 0.03, na.rm = TRUE)
       #
-      # browser()
       # message("plotting ", nrow(values$gg_data))
+      # browser()
       #
       gg_fig <- ggplot2::ggplot(
         data = dplyr::arrange(values$gg_data, log10_OR),
@@ -210,17 +225,17 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           # onclick = paste0('window.open("', link , '")')
         ), alpha = 0.75)+
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = facet_max, yend = facet_max),
+          ggplot2::aes(x = 0, y = 0, xend = facet_max_x, yend = facet_max_y),
           color = "red", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = facet_max, yend = 0),
+          ggplot2::aes(x = 0, y = 0, xend = facet_max_x, yend = 0),
           color = "black", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = 0, yend = facet_max),
+          ggplot2::aes(x = 0, y = 0, xend = 0, yend = facet_max_y),
           color = "black", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggiraph::geom_point_interactive(
           ggplot2::aes(size = p_group), show.legend=T, shape = 21) + #, position = position_dodge(width = 12))+
-        ggplot2::scale_size_manual(values = c(2,4,6,8)) +
+        ggplot2::scale_size_manual(values = c(1,2,3,4)) +
         {if(input$show_labels)
           ggrepel::geom_text_repel(
             data = values$gg_data |> dplyr::filter((is.infinite(OR) & cases_per > 0.05) | cases_per > (input$cases_per / 100)),
@@ -234,14 +249,14 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ggplot2::scale_x_continuous(
           breaks = seq(0, 0.8, 0.1),
           labels = seq(0, 80, 10),
-          limits = c(-0.01, facet_max) #, expand = ggplot2::expansion(add = c(0.0, 0.05))
+          limits = c(-0.03, facet_max_x), expand = ggplot2::expansion(add = c(0.0, 0.03))
         ) +
         ggplot2::scale_y_continuous(
           breaks = seq(0, 0.8, 0.1),
           labels = seq(0,80, 10),
-          limits = c(-0.01, facet_max), expand = ggplot2::expansion(add = c(0, 0.01))
+          limits = c(-0.03, facet_max_y), expand = ggplot2::expansion(add = c(0, 0.05))
         ) +
-        ggplot2::coord_fixed() +
+        # ggplot2::coord_fixed() +
         ggplot2::facet_grid(.~GROUP, drop = FALSE, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+
         ggplot2::theme_minimal()+
         ggplot2::theme(
@@ -325,10 +340,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                                            )
 
       )
-    })
-
-    shiny::observeEvent(input$show_table, {
-      print("show_table")
+      print(Sys.time() - start_time)
+      return(gg_girafe)
     })
 
   })
