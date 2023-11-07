@@ -119,6 +119,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
       if(input$measurement == TRUE) domains <- c(domains, "measurement")
       if(input$procedure_occurrence == TRUE) domains <- c(domains, "procedure_occurrence")
+      if(input$observation == TRUE) domains <- c(domains, "observation")
 
       values$gg_data <- .build_plot(r_studyResult, values) |>
         dplyr::filter(domain %in% domains)
@@ -164,6 +165,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                       shinyWidgets::awesomeCheckbox(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
                       shinyWidgets::awesomeCheckbox(ns("measurement"), label = "Measurement", value = TRUE),
                       shinyWidgets::awesomeCheckbox(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
+                      shinyWidgets::awesomeCheckbox(ns("observation"), label = "Observation", value = TRUE),
         ),
         shiny::column(3,
                       shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Label outstanding", value = FALSE),
@@ -180,6 +182,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ),
         shiny::column(3,
                       shiny::actionButton(ns("redraw"), label = "Update CodeWAS"),
+                      htmltools::br(),
                       shiny::actionButton(ns("unselect"), label = "Unselect"),
         ),
         htmltools::br(),
@@ -238,12 +241,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ggplot2::scale_size_manual(values = c(1,2,3,4)) +
         {if(input$show_labels)
           ggrepel::geom_text_repel(
-            data = values$gg_data |> dplyr::filter((is.infinite(OR) & cases_per > 0.05) | cases_per > (input$cases_per / 100)),
-            ggplot2::aes(label = stringr::str_wrap(name, 8)),
+            data = values$gg_data |>
+              dplyr::filter(as.integer(p_group) == 4 & cases_per > 0.5 & controls_per < 0.1),
+            ggplot2::aes(label = stringr::str_trunc(name, 15)),
             max.overlaps = Inf,
             size = 2.5,
             hjust = 0.1,
-            xlim = c(facet_max / 4, NA),
+            xlim = c(facet_max_x / 4, NA),
             box.padding = 0.8
           )} +
         ggplot2::scale_x_continuous(
@@ -270,12 +274,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           "condition_occurrence" = "khaki",
           "drug_exposure" = "lightblue2",
           "measurement" = "palegreen",
-          "procedure_occurrence" = "plum1"),
-          labels = c(
+          "procedure_occurrence" = "plum1",
+          "observation" = "gray"),
+      labels = c(
             "condition_occurrence" = "Condition occurrence",
             "drug_exposure" = "Drug exposure",
             "measurement" ="Measurement",
-            "procedure_occurrence" = "Procedure occurrence"
+            "observation" = "Observation"
           )
         ) +
         ggplot2::guides(color = "none", fill = ggplot2::guide_legend(override.aes = list(size = 5))) +
