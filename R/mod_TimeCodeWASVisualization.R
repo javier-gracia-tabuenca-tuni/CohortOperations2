@@ -11,7 +11,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 }
 
 .build_plot <- function(studyResult, values){
-  req(studyResult)
+  shiny::req(studyResult)
 
   message(".build_plot")
   start_time <- Sys.time()
@@ -46,7 +46,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
   studyResult_fig <- studyResult |>
     # dplyr::filter(p<0.00001) |>
     # dplyr::filter(p<0.05) |>
-    dplyr::filter(p < isolate(values$p_limit)) |>
+    dplyr::filter(p < 0.00001) |>
     dplyr::arrange(time_period, name) |>
     dplyr::mutate_if(is.character, stringr::str_replace_na, "") |>
     dplyr::mutate(
@@ -96,7 +96,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     ns <- session$ns
 
     values <- shiny::reactiveValues(
-      selection = NULL, time_periods = NULL, gg_data = NULL, p_limit = 0.05)
+      selection = NULL, time_periods = NULL, gg_data = NULL)
 
     # View(r_studyResult)
     # browser()
@@ -109,23 +109,26 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     shiny::observeEvent(input$redraw, {
       message("input$redraw")
-      # if(input$p_limit != values$p_limit){
-      #   values$p_limit <- input$p_limit
-      values$p_limit <- isolate(input$p_limit)
-      # values$gg_data <- .build_plot(r_studyResult, values)
-      # }
+
       domains <- c()
-      if(input$condition_occurrence == TRUE) domains <- c(domains, "condition_occurrence")
+      if(input$condition_occurrence == TRUE) domains <- c("condition_occurrence")
       if(input$drug_exposure == TRUE) domains <- c(domains, "drug_exposure")
       if(input$measurement == TRUE) domains <- c(domains, "measurement")
       if(input$procedure_occurrence == TRUE) domains <- c(domains, "procedure_occurrence")
       if(input$observation == TRUE) domains <- c(domains, "observation")
 
+      p_groups <- c()
+      if(input$group_1 == TRUE) p_groups <- c(1)
+      if(input$group_5 == TRUE) p_groups <- c(p_groups, 5)
+      if(input$group_10 == TRUE) p_groups <- c(p_groups, 10)
+      if(input$group_20 == TRUE) p_groups <- c(p_groups, 20)
+
       values$gg_data <- .build_plot(r_studyResult, values) |>
-        dplyr::filter(domain %in% domains)
+        dplyr::filter(domain %in% domains & p_group_size %in% p_groups)
+
     }, ignoreInit = TRUE)
 
-    observeEvent(input$unselect, {
+    shiny::observeEvent(input$unselect, {
       # remove the previous selection
       session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
       values$selection <- NULL
@@ -134,7 +137,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
     # mouse click handler
     #
-    observeEvent(input$codeWASplot_selected, {
+    shiny::observeEvent(input$codeWASplot_selected, {
       selected_rows <- input$codeWASplot_selected
 
       # browser()
@@ -151,41 +154,45 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
     # renderUI ####
     #
-    output$visualization_ui <- renderUI({
-      req(r_studyResult)
+    output$visualization_ui <- shiny::renderUI({
+      shiny::req(r_studyResult)
 
       message("renderUI")
 
       htmltools::tagList(
         shinyjs::useShinyjs(),
+        shiny::fluidRow(
+          shiny::column(3,
+                        shiny::h5("Observation type"),
+                        shinyWidgets::awesomeCheckbox(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("measurement"), label = "Measurement", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("observation"), label = "Observation", value = TRUE),
+          ),
+          shiny::column(3, # c("-log10(p) [0,50]", "-log10(p) (50,100]", "-log10(p) (100,200]", "-log10(p) (200,Inf]")
+                        shiny::h5("Probability groups"),
+                        shinyWidgets::awesomeCheckbox(ns("group_1"), label = "-log10(p) [0,50]", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("group_5"), label = "-log10(p) (50,100]", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("group_10"), label = "-log10(p) (100,200]", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("group_20"), label = "-log10(p) (200,Inf]", value = TRUE),
+          ),
+          shiny::column(3,
+                        shiny::h5("Labels"),
+                        shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Add labels", value = FALSE),
+                        shiny::sliderInput(ns("cases_per"), label="Cases % must be at least",
+                                           min = 20, max = 100, post  = " %", width = "200px",
+                                           value = 30
+                        ),
+          ),
+          shiny::column(3,
+                        shiny::actionButton(ns("redraw"), label = "Update CodeWAS"),
+                        shiny::hr(style = "margin-bottom: 20px;"),
+                        shiny::actionButton(ns("unselect"), label = "Unselect"),
+          )
+        ),
+        shiny::hr(style = "margin-bottom: 20px;"),
         ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "100%"),
-        shiny::hr(style = "margin-top: -20px;"),
-        shiny::column(3,
-                      shinyWidgets::awesomeCheckbox(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
-                      shinyWidgets::awesomeCheckbox(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
-                      shinyWidgets::awesomeCheckbox(ns("measurement"), label = "Measurement", value = TRUE),
-                      shinyWidgets::awesomeCheckbox(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
-                      shinyWidgets::awesomeCheckbox(ns("observation"), label = "Observation", value = TRUE),
-        ),
-        shiny::column(3,
-                      shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Label outstanding", value = FALSE),
-                      shiny::sliderInput(ns("cases_per"), label="Cases % must be at least",
-                                         min = 20, max = 100, post  = " %", width = "200px",
-                                         value = 30
-                      ),
-        ),
-        shiny::column(3,
-                      shiny::sliderInput(ns("p_limit"), label="p limit",
-                                         min = 0.00001, max = 0.05, pre  = "p < ", width = "400px",
-                                         value = 0.01
-                      ),
-        ),
-        shiny::column(3,
-                      shiny::actionButton(ns("redraw"), label = "Update CodeWAS"),
-                      htmltools::br(),
-                      shiny::actionButton(ns("unselect"), label = "Unselect"),
-        ),
-        htmltools::br(),
         shiny::hr(style = "margin-bottom: 20px;"),
       )
 
@@ -238,7 +245,14 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           color = "black", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggiraph::geom_point_interactive(
           ggplot2::aes(size = p_group), show.legend=T, shape = 21) + #, position = position_dodge(width = 12))+
-        ggplot2::scale_size_manual(values = c(1,2,3,4)) +
+        ggplot2::scale_size_manual(
+          values = c(
+            "-log10(p) [0,50]" = 1,
+            "-log10(p) (50,100]" = 1.5,
+            "-log10(p) (100,200]" = 2,
+            "-log10(p) (200,Inf]" = 3
+          )
+        ) +
         {if(input$show_labels)
           ggrepel::geom_text_repel(
             data = values$gg_data |>
