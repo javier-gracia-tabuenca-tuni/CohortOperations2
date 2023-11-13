@@ -108,7 +108,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
 
     shiny::observeEvent(input$redraw, {
-      message("input$redraw")
+      message("Update CodeWAS")
 
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c("condition_occurrence")
@@ -129,12 +129,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     }, ignoreInit = TRUE)
 
     #
-    # unselect
+    # unselect ####
     #
     shiny::observeEvent(input$unselect, {
+      message("unselect")
       # remove the previous selection
-      values$selection <- NULL
       session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
+      values$selection <- NULL
     }, ignoreInit = TRUE)
 
     #
@@ -145,7 +146,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       # browser()
 
       # remove the previous selection
-      session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
+      # session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
       # get selected points from girafe
       selected_rows <- input$codeWASplot_selected
 
@@ -271,6 +272,9 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     output$codeWASplot <- ggiraph::renderGirafe({
 
+      # take a reactive dependency on input$unselect
+      input$unselect
+
       message("renderGirafe")
       start_time <- Sys.time()
 
@@ -364,13 +368,15 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ggplot2::guides(color = "none", fill = ggplot2::guide_legend(override.aes = list(size = 5))) +
         ggplot2::labs(size = "p value group", fill = "Domain", x = "\nControls %", y = "Cases %")
 
-      gb <- ggplot2::ggplot_build(gg_fig)
-      g <- ggplot2::ggplot_gtable(gb)
+      # gb <- ggplot2::ggplot_build(gg_fig)
+      # g <- ggplot2::ggplot_gtable(gb)
 
       # browser()
       selected_items <- ""
 
       if(!is.null(values$selection) && length(unique(values$selection$code)) == 1){
+        gb <- ggplot2::ggplot_build(gg_fig)
+        g <- ggplot2::ggplot_gtable(gb)
         # remove domains not in the current data
         selection <- values$selection |>
           dplyr::filter(domain %in% values$gg_data$domain)
@@ -406,17 +412,21 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           # turn clip off to see the line across panels
           g$layout$clip <- "off"
         }
-        if(!is.null(values$selection))
-          selected_items <- as.character(values$selection$data_id)
-        else
+        if(!is.null(values$selection)){
+          selected_items <- as.character(unique(values$selection$code))
+        } else {
           selected_items <- ""
+        }
         if(!is.null(selected_items)) selected_items <- dplyr::first(selected_items)
         if(is.na(selected_items)) selected_items <- ""
+        gg_plot <- ggplotify::as.ggplot(g)
+      } else {
+        gg_plot <- gg_fig
       }
 
       message("renderGirafe selected_items: ", toString(selected_items))
 
-      gg_girafe <- ggiraph::girafe(ggobj = ggplotify::as.ggplot(g), width_svg = 15)
+      gg_girafe <- ggiraph::girafe(ggobj = gg_plot, width_svg = 15)
       gg_girafe <- ggiraph::girafe_options(gg_girafe,
                                            ggiraph::opts_sizing(rescale = TRUE, width = 1.0),
                                            ggiraph::opts_hover(css = "fill-opacity:1;fill:red;stroke:black;"),
