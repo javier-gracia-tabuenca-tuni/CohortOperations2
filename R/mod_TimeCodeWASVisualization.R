@@ -77,8 +77,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
         log10(OR) == -Inf ~ -2.5,
         log10(OR) == Inf ~ 5,
         TRUE ~ log10(OR) ,
-
-      )
+      ),
+      data_id = paste0(code, "@", as.character(time_period))
     )
 
   # View(studyResult_fig)
@@ -98,10 +98,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     values <- shiny::reactiveValues(
       selection = NULL, time_periods = NULL, gg_data = NULL)
 
+    values$gg_data <- .build_plot(r_studyResult, values)
+
     # View(r_studyResult)
     # browser()
-
-    values$gg_data <- .build_plot(r_studyResult, values)
 
     #
     # handlers
@@ -128,27 +128,88 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
     }, ignoreInit = TRUE)
 
+    #
+    # unselect
+    #
     shiny::observeEvent(input$unselect, {
       # remove the previous selection
-      session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
       values$selection <- NULL
+      session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
     }, ignoreInit = TRUE)
 
     #
     # mouse click handler
     #
     shiny::observeEvent(input$codeWASplot_selected, {
-      selected_rows <- input$codeWASplot_selected
 
       # browser()
 
-      values$selection <- values$gg_data |>
-        dplyr::filter(code %in% selected_rows) |>
-        dplyr::arrange(code, time_period) |>
-        dplyr::mutate(position = match(time_period, values$time_periods)) |>
-        dplyr::mutate(name = ifelse(!is.na(position), paste0("panel-1-", position), "NA")) |>
-        dplyr::select(code, domain, name, cases_per, controls_per)
+      # remove the previous selection
+      session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
+      # get selected points from girafe
+      selected_rows <- input$codeWASplot_selected
 
+      if(length(selected_rows) > 1)
+        selected_rows <- selected_rows[2:length(selected_rows)]
+
+      if(length(selected_rows) == 1 && selected_rows == "") {
+        return()
+      }
+
+      if(length(selected_rows) > 1){
+        # marquee selection
+        message("marquee selection")
+        message(toString(selected_rows))
+        df_lasso <- values$gg_data |>
+          dplyr::filter(data_id %in% selected_rows) |>
+          dplyr::mutate(up_in = ifelse(up_in == 1, "Case", "Ctrl")) |>
+          dplyr::mutate(cases_per = scales::percent(cases_per, accuracy = 0.01)) |>
+          dplyr::mutate(controls_per = scales::percent(controls_per, accuracy = 0.01)) |>
+          dplyr::mutate(p = formatC(p, format = "e", digits = 2)) |>
+          dplyr::select(code, name, up_in, n_cases_yes, n_controls_yes, cases_per, controls_per, GROUP, p)
+        # browser()
+        values$selection <- NULL
+        # show table
+        shiny::showModal(
+          shiny::modalDialog(
+            DT::renderDataTable({
+              DT::datatable(
+                df_lasso,
+                colnames = c(
+                  'Covariate ID' = 'code',
+                  'Covariate name' = 'name',
+                  'Type' = 'up_in',
+                  'Cases n' = 'n_cases_yes',
+                  'Ctrls n' = 'n_controls_yes',
+                  'Cases %' = 'cases_per',
+                  'Ctrls %' = 'controls_per',
+                  'Group' = 'GROUP',
+                  'p' = 'p'
+                )
+              )
+            }),
+            size = "l",
+            easyClose = FALSE,
+            title = paste0("Entries (", nrow(df_lasso), ")"),
+            footer = shiny::modalButton("Close"),
+            options = list(
+              autowidth = TRUE
+            )
+          )
+        )
+
+      } else {
+        # single point
+        selected_rows <- stringr::str_remove_all(selected_rows, "@.*")
+        message("single point selected")
+        message(toString(selected_rows))
+        values$selection <- values$gg_data |>
+          dplyr::filter(code %in% selected_rows) |>
+          dplyr::arrange(code, time_period) |>
+          dplyr::mutate(position = match(time_period, values$time_periods)) |>
+          dplyr::mutate(name = ifelse(!is.na(position), paste0("panel-1-", position), "NA")) |>
+          dplyr::select(code, domain, name, cases_per, controls_per)
+      }
     }, ignoreInit = TRUE)
 
     #
@@ -231,7 +292,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           fill = domain,
           tooltip = label,
           # size = ordered(p_group), # log10_OR
-          data_id = code
+          data_id = data_id
           # onclick = paste0('window.open("', link , '")')
         ), alpha = 0.75)+
         ggplot2::geom_segment(
@@ -275,7 +336,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           limits = c(-0.03, facet_max_y), expand = ggplot2::expansion(add = c(0, 0.05))
         ) +
         # ggplot2::coord_fixed() +
-        ggplot2::facet_grid(.~GROUP, drop = FALSE, scales = "fixed", labeller = ggplot2::labeller(GROUP = label_editor))+
+        ggplot2::facet_grid(
+          .~GROUP, drop = FALSE, scales = "fixed",
+          labeller = ggplot2::labeller(GROUP = label_editor)
+        )+
         ggplot2::theme_minimal()+
         ggplot2::theme(
           legend.key.height = grid::unit(5, "mm"),
@@ -304,8 +368,9 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       g <- ggplot2::ggplot_gtable(gb)
 
       # browser()
+      selected_items <- ""
 
-      if(!is.null(values$selection) && length(unique(values$selection))){
+      if(!is.null(values$selection) && length(unique(values$selection$code)) == 1){
         # remove domains not in the current data
         selection <- values$selection |>
           dplyr::filter(domain %in% values$gg_data$domain)
@@ -341,19 +406,22 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           # turn clip off to see the line across panels
           g$layout$clip <- "off"
         }
+        if(!is.null(values$selection))
+          selected_items <- as.character(values$selection$data_id)
+        else
+          selected_items <- ""
+        if(!is.null(selected_items)) selected_items <- dplyr::first(selected_items)
+        if(is.na(selected_items)) selected_items <- ""
       }
 
-      selected_items <- as.character(values$selection$code)
-      if(!is.null(selected_items)) selected_items <- dplyr::first(selected_items)
-      if(is.na(selected_items)) selected_items <- ""
-      # message("selected_items: ", toString(selected_items))
+      message("renderGirafe selected_items: ", toString(selected_items))
 
       gg_girafe <- ggiraph::girafe(ggobj = ggplotify::as.ggplot(g), width_svg = 15)
       gg_girafe <- ggiraph::girafe_options(gg_girafe,
                                            ggiraph::opts_sizing(rescale = TRUE, width = 1.0),
                                            ggiraph::opts_hover(css = "fill-opacity:1;fill:red;stroke:black;"),
                                            ggiraph::opts_selection(
-                                             type = c("single"),
+                                             type = c("multiple"),
                                              only_shiny = TRUE,
                                              selected = selected_items
                                            )
