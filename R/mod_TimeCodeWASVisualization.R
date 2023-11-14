@@ -167,7 +167,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           dplyr::mutate(cases_per = scales::percent(cases_per, accuracy = 0.01)) |>
           dplyr::mutate(controls_per = scales::percent(controls_per, accuracy = 0.01)) |>
           dplyr::mutate(p = formatC(p, format = "e", digits = 2)) |>
-          dplyr::select(code, name, up_in, n_cases_yes, n_controls_yes, cases_per, controls_per, GROUP, p)
+          dplyr::select(name, up_in, n_cases_yes, n_controls_yes, cases_per, controls_per, GROUP, p)
+        # dplyr::select(code, name, up_in, n_cases_yes, n_controls_yes, cases_per, controls_per, GROUP, p)
         # browser()
         values$selection <- NULL
         # show table
@@ -177,7 +178,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
               DT::datatable(
                 df_lasso,
                 colnames = c(
-                  'Covariate ID' = 'code',
+                  # 'Covariate ID' = 'code',
                   'Covariate name' = 'name',
                   'Type' = 'up_in',
                   'Cases n' = 'n_cases_yes',
@@ -240,7 +241,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                         shinyWidgets::awesomeCheckbox(ns("group_20"), label = "-log10(p) (200,Inf]", value = TRUE),
           ),
           shiny::column(3,
-                        shiny::actionButton(ns("show_labels"), label = "Show labels"),
+                        shinyWidgets::awesomeCheckbox(ns("show_labels"), label = "Show labels"),
                         shiny::hr(style = "margin-bottom: 0px;"),
                         shiny::sliderInput(ns("cases_per"), label="Filter cases% <",
                                            min = 0, max = 100, post  = " %", width = "200px",
@@ -271,17 +272,13 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
 
     output$codeWASplot <- ggiraph::renderGirafe({
-      # message("renderGirafe")
 
-      # take a reactive dependency on input$unselect
+      # take a reactive dependency on the following
       input$unselect
-  #    input$codeWASplot_selected
-
-      # start_time <- Sys.time()
+      input$redraw
 
       if(is.null(values$gg_data)) return()
       # adjust the label area according to facet width
-      # facet_max <- max(values$gg_data$controls_per, values$gg_data$cases_per, 0.03, na.rm = TRUE)
       facet_max_x <- max(values$gg_data$controls_per, 0.03, na.rm = TRUE)
       facet_max_y <- max(values$gg_data$cases_per, 0.03, na.rm = TRUE)
       #
@@ -319,11 +316,11 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
             "-log10(p) (200,Inf]" = 3
           )
         ) +
-        {if(input$show_labels)
+        {if(shiny::isolate(input$show_labels))
           ggrepel::geom_text_repel(
             data = values$gg_data |>
-              dplyr::filter(cases_per > isolate(input$cases_per)/100),
-            ggplot2::aes(label = stringr::str_wrap(stringr::str_trunc(name, 20), 10)),
+              dplyr::filter(cases_per > shiny::isolate(input$cases_per)/100),
+            ggplot2::aes(label = stringr::str_wrap(stringr::str_trunc(name, 30), 15)),
             max.overlaps = Inf,
             size = 3,
             hjust = 0.1,
