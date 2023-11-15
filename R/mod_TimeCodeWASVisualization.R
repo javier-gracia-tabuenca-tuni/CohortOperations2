@@ -330,12 +330,12 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ggplot2::scale_x_continuous(
           breaks = c(0, 0.05, seq(0.1, 0.8, 0.1)),
           labels = c(0, 5, seq(10, 80, 10)),
-          limits = c(-0.03, facet_max_x), expand = ggplot2::expansion(add = c(0.0, 0.03))
+          limits = c(-0.02 * facet_max_x, facet_max_x)
         ) +
         ggplot2::scale_y_continuous(
           breaks = seq(0, 0.8, 0.1),
           labels = seq(0,80, 10),
-          limits = c(-0.03, facet_max_y), expand = ggplot2::expansion(add = c(0, 0.08))
+          limits = c(-0.02 * facet_max_y, facet_max_y)
         ) +
         # ggplot2::coord_fixed() +
         ggplot2::facet_grid(
