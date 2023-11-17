@@ -78,7 +78,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
         log10(OR) == Inf ~ 5,
         TRUE ~ log10(OR) ,
       ),
-      data_id = paste0(code, "@", as.character(time_period))
+      data_id_full = paste0(code, "@", as.character(time_period)),
+      data_id = code
     )
 
   # View(studyResult_fig)
@@ -234,7 +235,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                         shinyWidgets::awesomeCheckbox(ns("observation"), label = "Observation", value = TRUE),
           ),
           shiny::column(3, # c("-log10(p) [0,50]", "-log10(p) (50,100]", "-log10(p) (100,200]", "-log10(p) (200,Inf]")
-                        shiny::h5("Probability groups"),
+                        shiny::h5("p-value groups"),
                         shinyWidgets::awesomeCheckbox(ns("group_1"), label = "-log10(p) [0,50]", value = TRUE),
                         shinyWidgets::awesomeCheckbox(ns("group_5"), label = "-log10(p) (50,100]", value = TRUE),
                         shinyWidgets::awesomeCheckbox(ns("group_10"), label = "-log10(p) (100,200]", value = TRUE),
