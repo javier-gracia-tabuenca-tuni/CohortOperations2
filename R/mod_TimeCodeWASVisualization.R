@@ -99,7 +99,15 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     values <- shiny::reactiveValues(
       selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_saved = NULL)
 
-    values$gg_data_saved <- values$gg_data <- .build_plot(r_studyResult, values)
+    # this is done once
+    values$gg_data_saved <- .build_plot(r_studyResult, values)
+
+    # these must be in sync with renderUI
+    domains <- c("condition_occurrence", "drug_exposure")
+    p_groups <- c(10,20)
+
+    values$gg_data <- values$gg_data_saved |>
+      dplyr::filter(domain %in% domains & p_group_size %in% p_groups)
 
     # View(r_studyResult)
     # browser()
@@ -230,14 +238,14 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                         shiny::h5("Observation type"),
                         shinyWidgets::awesomeCheckbox(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
                         shinyWidgets::awesomeCheckbox(ns("drug_exposure"), label = "Drug exposure", value = TRUE),
-                        shinyWidgets::awesomeCheckbox(ns("measurement"), label = "Measurement", value = TRUE),
-                        shinyWidgets::awesomeCheckbox(ns("procedure_occurrence"), label = "Procedure occurrence", value = TRUE),
-                        shinyWidgets::awesomeCheckbox(ns("observation"), label = "Observation", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("measurement"), label = "Measurement", value = FALSE),
+                        shinyWidgets::awesomeCheckbox(ns("procedure_occurrence"), label = "Procedure occurrence", value = FALSE),
+                        shinyWidgets::awesomeCheckbox(ns("observation"), label = "Observation", value = FALSE),
           ),
           shiny::column(3, # c("-log10(p) [0,50]", "-log10(p) (50,100]", "-log10(p) (100,200]", "-log10(p) (200,Inf]")
                         shiny::h5("p-value groups"),
-                        shinyWidgets::awesomeCheckbox(ns("group_1"), label = "-log10(p) [0,50]", value = TRUE),
-                        shinyWidgets::awesomeCheckbox(ns("group_5"), label = "-log10(p) (50,100]", value = TRUE),
+                        shinyWidgets::awesomeCheckbox(ns("group_1"), label = "-log10(p) [0,50]", value = FALSE),
+                        shinyWidgets::awesomeCheckbox(ns("group_5"), label = "-log10(p) (50,100]", value = FALSE),
                         shinyWidgets::awesomeCheckbox(ns("group_10"), label = "-log10(p) (100,200]", value = TRUE),
                         shinyWidgets::awesomeCheckbox(ns("group_20"), label = "-log10(p) (200,Inf]", value = TRUE),
           ),
@@ -256,7 +264,11 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           )
         ),
         shiny::hr(style = "margin-bottom: 20px;"),
-        ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "100%"),
+        shinycustomloader::withLoader(
+          ggiraph::girafeOutput(ns("codeWASplot"), width = "100%", height = "100%"),
+          type = "html",
+          loader = "dnaspin",
+        ),
         shiny::hr(style = "margin-bottom: 20px;"),
       )
 
