@@ -78,8 +78,8 @@ mod_timeCodeWASVisualization_ui <- function(id) {
         log10(OR) == Inf ~ 5,
         TRUE ~ log10(OR) ,
       ),
-      data_id_full = paste0(code, "@", as.character(time_period)),
-      data_id = code
+      data_id = paste0(code, "@", as.character(time_period)),
+      data_id_class = code
     )
 
   # View(studyResult_fig)
@@ -155,7 +155,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       # browser()
 
       # remove the previous selection
-      # session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
+      session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
       # get selected points from girafe
       selected_rows <- input$codeWASplot_selected
 
@@ -440,7 +440,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       gg_girafe <- ggiraph::girafe(ggobj = gg_plot, width_svg = 15)
       gg_girafe <- ggiraph::girafe_options(gg_girafe,
                                            ggiraph::opts_sizing(rescale = TRUE, width = 1.0),
-                                           ggiraph::opts_hover(css = "fill-opacity:1;fill:red;stroke:black;"),
+                                           ggiraph::opts_hover(
+                                             css = "fill-opacity:1;fill:red;stroke:black;",
+                                             reactive = TRUE
+                                           ),
                                            ggiraph::opts_selection(
                                              type = c("multiple"),
                                              only_shiny = TRUE,
