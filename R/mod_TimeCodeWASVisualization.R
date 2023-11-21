@@ -13,7 +13,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 .build_plot <- function(studyResult, values){
   shiny::req(studyResult)
 
-  message(".build_plot")
+  # message(".build_plot")
   # start_time <- Sys.time()
 
   # get time_periods

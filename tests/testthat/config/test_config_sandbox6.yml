@@ -1,3 +1,23 @@
+# DF12
+dev_bigquery:
+  cohortTableHandler:
+    databaseName: FinnGen-DF12
+    connection:
+      connectionDetailsSettings:
+        dbms: bigquery
+        user: ""
+        password: ""
+        connectionString: jdbc:bigquery://https://www.googleapis.com/auth/bigquery:433;ProjectId=fg-production-sandbox-6;OAuthType=3;Timeout=10000;
+        pathToDriver: /root/hades/jdbc_drivers # from docker file
+      tempEmulationSchema: fg-production-sandbox-6.sandbox #needed for creating tmp table in BigQuery
+      useBigrqueryUpload: true # option for HadesExtras
+    cdm:
+      cdmDatabaseSchema: finngen-production-library.finngen_omop_r12
+      vocabularyDatabaseSchema: finngen-production-library.finngen_omop_r12
+    cohortTable:
+      cohortDatabaseSchema: fg-production-sandbox-6.sandbox
+      cohortTableName: harri_test_cohort_table
+
 # DF11
 dev_bigquery:
   cohortTableHandler:
