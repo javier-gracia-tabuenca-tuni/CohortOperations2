@@ -229,11 +229,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     output$visualization_ui <- shiny::renderUI({
       shiny::req(r_studyResult)
 
-      # message("renderUI")
-
       htmltools::tagList(
         shinyjs::useShinyjs(),
         shiny::fluidRow(
+          # these must be in sync with server initialization
           shiny::column(3,
                         shiny::h5("Observation type"),
                         shinyWidgets::awesomeCheckbox(ns("condition_occurrence"), label = "Condition occurrence", value = TRUE),
@@ -311,7 +310,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           # onclick = paste0('window.open("', link , '")')
         ), alpha = 0.75)+
         ggplot2::geom_segment(
-          ggplot2::aes(x = 0, y = 0, xend = facet_max_x, yend = facet_max_y),
+          ggplot2::aes(x = 0, y = 0,
+                       xend = ifelse(facet_max_x > facet_max_y, facet_max_y, facet_max_x),
+                       yend = ifelse(facet_max_x > facet_max_y, facet_max_y, facet_max_x)
+          ),
           color = "red", alpha = 0.5, linewidth = 0.2, linetype = "dashed") +
         ggplot2::geom_segment(
           ggplot2::aes(x = 0, y = 0, xend = facet_max_x, yend = 0),

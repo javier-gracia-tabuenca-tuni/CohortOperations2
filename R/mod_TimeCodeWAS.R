@@ -64,7 +64,7 @@ mod_timeCodeWAS_ui <- function(id) {
     shiny::tags$br(),
     shiny::tags$div(
       style="margin-bottom:50px;",
-      shiny::actionButton(ns("view_actionButton"), "Open CodeWAS Viewer"),
+      shiny::actionButton(ns("viewer_actionButton"), "Load CodeWAS Viewer"),
     ),
     shiny::tags$br(),
   )
@@ -272,7 +272,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     shiny::observe({
       condition <- !is.null(rf_timeCodeWasCounts())
       shinyjs::toggleState("download_actionButton", condition = condition )
-      shinyjs::toggleState("view_actionButton", condition = condition )
+      shinyjs::toggleState("viewer_actionButton", condition = condition )
     })
 
 
@@ -283,7 +283,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
       }
     )
 
-    shiny::observeEvent(input$view_actionButton, {
+    shiny::observeEvent(input$viewer_actionButton, {
       shiny::req(rf_timeCodeWasCounts)
 
       mod_timeCodeWASVisualization_server("timeCodeWAS_visualization", rf_timeCodeWasCounts())

@@ -1,5 +1,5 @@
 # DF12
-dev_bigquery:
+dev_bigquery3:
   cohortTableHandler:
     databaseName: FinnGen-DF12
     connection:
@@ -16,10 +16,10 @@ dev_bigquery:
       vocabularyDatabaseSchema: finngen-production-library.finngen_omop_r12
     cohortTable:
       cohortDatabaseSchema: fg-production-sandbox-6.sandbox
-      cohortTableName: harri_test_cohort_table
+      cohortTableName: javier_test_cohort_table
 
 # DF11
-dev_bigquery:
+dev_bigquery2:
   cohortTableHandler:
     databaseName: FinnGen-DF11
     connection:
@@ -39,7 +39,7 @@ dev_bigquery:
       cohortTableName: javier_test_cohort_table
 
 # DF10
-dev_bigquery2:
+dev_bigquery1:
   cohortTableHandler:
     databaseName: FinnGen-DF10
     connection:
