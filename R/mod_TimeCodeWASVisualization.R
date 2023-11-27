@@ -44,9 +44,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
     dplyr::mutate(p = dplyr::if_else(p==0, 10^-323, p))
 
   studyResult_fig <- studyResult |>
-    # dplyr::filter(p<0.00001) |>
-    # dplyr::filter(p<0.05) |>
-    dplyr::filter(p < 0.00001) |>
+    dplyr::filter(p<0.00001) |>
     dplyr::arrange(time_period, name) |>
     dplyr::mutate_if(is.character, stringr::str_replace_na, "") |>
     dplyr::mutate(
@@ -97,7 +95,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     ns <- session$ns
 
     values <- shiny::reactiveValues(
-      selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_saved = NULL)
+      selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_saved = NULL, skip_selection = FALSE)
 
     # this is done once
     values$gg_data_saved <- .build_plot(r_studyResult, values)
@@ -148,16 +146,22 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     }, ignoreInit = TRUE)
 
     #
-    # mouse click handler
+    # mouse click handler ####
     #
     shiny::observeEvent(input$codeWASplot_selected, {
+      # message("codeWASplot_selected")
+
+      if(values$skip_selection){
+        values$skip_selection <- FALSE
+        return()
+      }
 
       # browser()
 
-      # remove the previous selection
-      session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
       # get selected points from girafe
-      selected_rows <- input$codeWASplot_selected
+      selected_rows <- shiny::isolate(input$codeWASplot_selected)
+      # remove the selection
+      # session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
 
       if(length(selected_rows) > 1)
         selected_rows <- selected_rows[2:length(selected_rows)]
@@ -284,7 +288,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
 
     output$codeWASplot <- ggiraph::renderGirafe({
-
+      # message("renderGirafe")
       # take a reactive dependency on the following
       input$unselect
       input$redraw
@@ -388,6 +392,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       selected_items <- ""
 
       if(!is.null(values$selection) && length(unique(values$selection$code)) == 1){
+        # one point selected -> draw a line connecting the same code in each facet
         gb <- ggplot2::ggplot_build(gg_fig)
         g <- ggplot2::ggplot_gtable(gb)
         # remove domains not in the current data
@@ -425,13 +430,24 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           # turn clip off to see the line across panels
           g$layout$clip <- "off"
         }
+
         if(!is.null(values$selection)){
           selected_items <- as.character(unique(values$selection$code))
+          # extend selection to same code in all facets
+          # browser()
+          selected_items <- values$gg_data |>
+            dplyr::filter(code == selected_items) |>
+            dplyr::pull(data_id)
+          # message("selected_items(values$selection$code): ", toString(selected_items))
+          values$skip_selection <- TRUE
         } else {
           selected_items <- ""
+          # message("selected_items: NULL")
         }
-        if(!is.null(selected_items)) selected_items <- dplyr::first(selected_items)
-        if(is.na(selected_items)) selected_items <- ""
+
+        # if(!is.null(selected_items)) selected_items <- dplyr::first(selected_items)
+        # if(is.na(selected_items)) selected_items <- ""
+
         gg_plot <- ggplotify::as.ggplot(g)
       } else {
         gg_plot <- gg_fig
@@ -444,7 +460,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                                            ggiraph::opts_sizing(rescale = TRUE, width = 1.0),
                                            ggiraph::opts_hover(
                                              css = "fill-opacity:1;fill:red;stroke:black;",
-                                             reactive = TRUE
+                                             reactive = FALSE
                                            ),
                                            ggiraph::opts_selection(
                                              type = c("multiple"),
