@@ -158,17 +158,22 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
       # browser()
 
+
       # get selected points from girafe
-      selected_rows <- shiny::isolate(input$codeWASplot_selected)
-      # remove the selection
-      # session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
+      selected_rows <- input$codeWASplot_selected
+      # remove the current selection from the new one
+      old_selection <- values$selection$data_id
+      selected_rows <- setdiff(selected_rows, old_selection)
+      values$selection <- NULL
 
-      if(length(selected_rows) > 1)
-        selected_rows <- selected_rows[2:length(selected_rows)]
+      # if(length(selected_rows) > 1)
+      #   selected_rows <- selected_rows[2:length(selected_rows)]
 
-      if(length(selected_rows) == 1 && selected_rows == "") {
-        return()
-      }
+      selected_rows <- selected_rows[selected_rows != ""]
+
+      # if(length(selected_rows) == 1 && selected_rows == "") {
+      #   return()
+      # }
 
       if(length(selected_rows) > 1){
         # marquee selection
@@ -223,7 +228,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           dplyr::arrange(code, time_period) |>
           dplyr::mutate(position = match(time_period, values$time_periods)) |>
           dplyr::mutate(name = ifelse(!is.na(position), paste0("panel-1-", position), "NA")) |>
-          dplyr::select(code, domain, name, cases_per, controls_per)
+          dplyr::select(code, domain, name, cases_per, controls_per, data_id)
       }
     }, ignoreInit = TRUE)
 
