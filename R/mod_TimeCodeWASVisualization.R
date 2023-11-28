@@ -13,7 +13,7 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 .build_plot <- function(studyResult, values){
   shiny::req(studyResult)
 
-  # message(".build_plot")
+  message(".build_plot")
   # start_time <- Sys.time()
 
   # get time_periods
@@ -149,15 +149,24 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     # mouse click handler ####
     #
     shiny::observeEvent(input$codeWASplot_selected, {
-      # message("codeWASplot_selected")
+      selected_rows <- input$codeWASplot_selected
+      if(length(selected_rows) == 1 && selected_rows == "") {
+        message("empty selection, exiting")
+        return()
+      }
+
+      message("codeWASplot_selected")
+      message(paste("selection: ", toString(selected_rows)))
+
+      # browser()
 
       if(values$skip_selection){
+        message("skip_selection == TRUE")
         values$skip_selection <- FALSE
         return()
       }
 
       # browser()
-
 
       # get selected points from girafe
       selected_rows <- input$codeWASplot_selected
@@ -166,14 +175,12 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       selected_rows <- setdiff(selected_rows, old_selection)
       values$selection <- NULL
 
-      # if(length(selected_rows) > 1)
-      #   selected_rows <- selected_rows[2:length(selected_rows)]
-
       selected_rows <- selected_rows[selected_rows != ""]
 
-      # if(length(selected_rows) == 1 && selected_rows == "") {
-      #   return()
-      # }
+      if(length(selected_rows) == 1 && selected_rows == "") {
+        message("same selection as previously, exiting")
+        return()
+      }
 
       if(length(selected_rows) > 1){
         # marquee selection
@@ -293,7 +300,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
 
     output$codeWASplot <- ggiraph::renderGirafe({
-      # message("renderGirafe")
+      message("renderGirafe")
+      message("input size ==", paste(nrow(values$gg_data)))
       # take a reactive dependency on the following
       input$unselect
       input$redraw
@@ -398,6 +406,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
 
       if(!is.null(values$selection) && length(unique(values$selection$code)) == 1){
         # one point selected -> draw a line connecting the same code in each facet
+        message("one point selected")
         gb <- ggplot2::ggplot_build(gg_fig)
         g <- ggplot2::ggplot_gtable(gb)
         # remove domains not in the current data
@@ -437,6 +446,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         }
 
         if(!is.null(values$selection)){
+          message("we have a selection")
           selected_items <- as.character(unique(values$selection$code))
           # extend selection to same code in all facets
           # browser()
