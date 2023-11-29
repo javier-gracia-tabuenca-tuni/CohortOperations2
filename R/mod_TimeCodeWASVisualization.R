@@ -13,9 +13,6 @@ mod_timeCodeWASVisualization_ui <- function(id) {
 .build_plot <- function(studyResult, values){
   shiny::req(studyResult)
 
-  message(".build_plot")
-  # start_time <- Sys.time()
-
   # get time_periods
   l <- unique(studyResult$timeRange)
   l_split <- lapply(l, function(x) {stringr::str_split(x, " ", simplify = TRUE)})
@@ -80,9 +77,6 @@ mod_timeCodeWASVisualization_ui <- function(id) {
       data_id_class = code
     )
 
-  # View(studyResult_fig)
-  # browser()
-  # print(Sys.time() - start_time)
   return(studyResult_fig)
 }
 
@@ -95,7 +89,12 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     ns <- session$ns
 
     values <- shiny::reactiveValues(
-      selection = NULL, time_periods = NULL, gg_data = NULL, gg_data_saved = NULL, skip_selection = FALSE)
+      selection = NULL,
+      time_periods = NULL,
+      gg_data = NULL,
+      gg_data_saved = NULL,
+      skip_selection = FALSE
+    )
 
     # this is done once
     values$gg_data_saved <- .build_plot(r_studyResult, values)
@@ -107,15 +106,11 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     values$gg_data <- values$gg_data_saved |>
       dplyr::filter(domain %in% domains & p_group_size %in% p_groups)
 
-    # View(r_studyResult)
-    # browser()
-
     #
     # handlers
     #
 
     shiny::observeEvent(input$redraw, {
-      # message("Update CodeWAS")
 
       domains <- c()
       if(input$condition_occurrence == TRUE) domains <- c("condition_occurrence")
@@ -139,7 +134,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     # unselect ####
     #
     shiny::observeEvent(input$unselect, {
-      # message("unselect")
       # remove the previous selection
       session$sendCustomMessage(type = 'codeWASplot_set', message = character(0))
       values$selection <- NULL
@@ -149,43 +143,38 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     # mouse click handler ####
     #
     shiny::observeEvent(input$codeWASplot_selected, {
-      selected_rows <- input$codeWASplot_selected
-      if(length(selected_rows) == 1 && selected_rows == "") {
-        message("empty selection, exiting")
-        return()
-      }
-
-      message("codeWASplot_selected")
-      message(paste("selection: ", toString(selected_rows)))
 
       # browser()
 
+      # get selected points from girafe
+      selected_rows <- input$codeWASplot_selected
+      if(length(selected_rows) == 1 && selected_rows == "") {
+        return()
+      }
+
+      # pre-selection in renderGirafe fires a selection, ignore it
       if(values$skip_selection){
-        message("skip_selection == TRUE")
         values$skip_selection <- FALSE
         return()
       }
 
       # browser()
 
-      # get selected points from girafe
-      selected_rows <- input$codeWASplot_selected
-      # remove the current selection from the new one
+      # remove the old selection from the new one
       old_selection <- values$selection$data_id
       selected_rows <- setdiff(selected_rows, old_selection)
       values$selection <- NULL
 
+      # remove empty strings returned by girafe selection
       selected_rows <- selected_rows[selected_rows != ""]
 
-      if(length(selected_rows) == 1 && selected_rows == "") {
-        message("same selection as previously, exiting")
+      if(length(selected_rows) == 0){
+        values$skip_selection <- TRUE
         return()
       }
 
-      if(length(selected_rows) > 1){
+      if(length(unique(selected_rows)) > 1){
         # marquee selection
-        # message("marquee selection")
-        # message(toString(selected_rows))
         df_lasso <- values$gg_data |>
           dplyr::filter(data_id %in% selected_rows) |>
           dplyr::mutate(up_in = ifelse(up_in == 1, "Case", "Ctrl")) |>
@@ -193,8 +182,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           dplyr::mutate(controls_per = scales::percent(controls_per, accuracy = 0.01)) |>
           dplyr::mutate(p = formatC(p, format = "e", digits = 2)) |>
           dplyr::select(name, up_in, n_cases_yes, n_controls_yes, cases_per, controls_per, GROUP, p)
-        # dplyr::select(code, name, up_in, n_cases_yes, n_controls_yes, cases_per, controls_per, GROUP, p)
-        # browser()
         values$selection <- NULL
         # show table
         shiny::showModal(
@@ -224,12 +211,9 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
             )
           )
         )
-
       } else {
-        # single point
+        # single point selected
         selected_rows <- stringr::str_remove_all(selected_rows, "@.*")
-        # message("single point selected")
-        # message(toString(selected_rows))
         values$selection <- values$gg_data |>
           dplyr::filter(code %in% selected_rows) |>
           dplyr::arrange(code, time_period) |>
@@ -300,8 +284,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
 
     output$codeWASplot <- ggiraph::renderGirafe({
-      message("renderGirafe")
-      message("input size ==", paste(nrow(values$gg_data)))
       # take a reactive dependency on the following
       input$unselect
       input$redraw
@@ -311,8 +293,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       facet_max_x <- max(values$gg_data$controls_per, 0.03, na.rm = TRUE)
       facet_max_y <- max(values$gg_data$cases_per, 0.03, na.rm = TRUE)
       #
-      # message("plotting ", nrow(values$gg_data))
-      # browser()
       #
       gg_fig <- ggplot2::ggplot(
         data = dplyr::arrange(values$gg_data, log10_OR),
@@ -398,15 +378,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         ggplot2::guides(color = "none", fill = ggplot2::guide_legend(override.aes = list(size = 5))) +
         ggplot2::labs(size = "p value group", fill = "Domain", x = "\nControls %", y = "Cases %")
 
-      # gb <- ggplot2::ggplot_build(gg_fig)
-      # g <- ggplot2::ggplot_gtable(gb)
-
-      # browser()
       selected_items <- ""
 
       if(!is.null(values$selection) && length(unique(values$selection$code)) == 1){
         # one point selected -> draw a line connecting the same code in each facet
-        message("one point selected")
         gb <- ggplot2::ggplot_build(gg_fig)
         g <- ggplot2::ggplot_gtable(gb)
         # remove domains not in the current data
@@ -426,8 +401,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           selection$z <- 1
           selection$clip <- "off"
 
-          # print(selection)
-
           # move to the beginning of selection
           g <- gtable::gtable_add_grob(
             g, grid::moveToGrob(selection[1,]$controls_per, selection[1,]$cases_per),
@@ -446,29 +419,20 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         }
 
         if(!is.null(values$selection)){
-          message("we have a selection")
           selected_items <- as.character(unique(values$selection$code))
           # extend selection to same code in all facets
-          # browser()
           selected_items <- values$gg_data |>
             dplyr::filter(code == selected_items) |>
             dplyr::pull(data_id)
-          # message("selected_items(values$selection$code): ", toString(selected_items))
           values$skip_selection <- TRUE
         } else {
           selected_items <- ""
-          # message("selected_items: NULL")
         }
-
-        # if(!is.null(selected_items)) selected_items <- dplyr::first(selected_items)
-        # if(is.na(selected_items)) selected_items <- ""
 
         gg_plot <- ggplotify::as.ggplot(g)
       } else {
         gg_plot <- gg_fig
       }
-
-      # message("renderGirafe selected_items: ", toString(selected_items))
 
       gg_girafe <- ggiraph::girafe(ggobj = gg_plot, width_svg = 15)
       gg_girafe <- ggiraph::girafe_options(gg_girafe,
@@ -484,7 +448,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
                                            )
 
       )
-      # print(Sys.time() - start_time)
       return(gg_girafe)
     })
 
