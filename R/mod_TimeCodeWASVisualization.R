@@ -173,7 +173,10 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         return()
       }
 
-      if(length(unique(selected_rows)) > 1){
+      # remove facet names
+      selected_data_ids <- stringr::str_remove_all(selected_rows, "@.*")
+
+      if(length(unique(selected_data_ids)) > 1){
         # marquee selection
         df_lasso <- values$gg_data |>
           dplyr::filter(data_id %in% selected_rows) |>
