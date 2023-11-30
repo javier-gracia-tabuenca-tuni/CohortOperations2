@@ -96,6 +96,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       skip_selection = FALSE
     )
 
+    # browser()
+
     # this is done once
     values$gg_data_saved <- .build_plot(r_studyResult, values)
 
@@ -144,17 +146,19 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
     #
     shiny::observeEvent(input$codeWASplot_selected, {
 
+      # pre-selection in renderGirafe fires a selection, ignore it
+      if(values$skip_selection){
+        values$skip_selection <- FALSE
+        return()
+      }
+
       # browser()
 
       # get selected points from girafe
       selected_rows <- input$codeWASplot_selected
-      if(length(selected_rows) == 1 && selected_rows == "") {
-        return()
-      }
-
-      # pre-selection in renderGirafe fires a selection, ignore it
-      if(values$skip_selection){
-        values$skip_selection <- FALSE
+      # remove empty strings returned by girafe selection
+      selected_rows <- selected_rows[selected_rows != ""]
+      if(length(selected_rows) == 0) {
         return()
       }
 
@@ -164,9 +168,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       old_selection <- values$selection$data_id
       selected_rows <- setdiff(selected_rows, old_selection)
       values$selection <- NULL
-
-      # remove empty strings returned by girafe selection
-      selected_rows <- selected_rows[selected_rows != ""]
 
       if(length(selected_rows) == 0){
         values$skip_selection <- TRUE
