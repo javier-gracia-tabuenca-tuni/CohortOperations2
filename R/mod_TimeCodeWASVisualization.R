@@ -152,8 +152,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
         return()
       }
 
-      # browser()
-
       # get selected points from girafe
       selected_rows <- input$codeWASplot_selected
       # remove empty strings returned by girafe selection
@@ -161,8 +159,6 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       if(length(selected_rows) == 0) {
         return()
       }
-
-      # browser()
 
       # remove the old selection from the new one
       old_selection <- values$selection$data_id
@@ -178,7 +174,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
       selected_data_ids <- stringr::str_remove_all(selected_rows, "@.*")
 
       if(length(unique(selected_data_ids)) > 1){
-        # marquee selection
+        # we have a marquee selection with n > 1
         df_lasso <- values$gg_data |>
           dplyr::filter(data_id %in% selected_rows) |>
           dplyr::mutate(up_in = ifelse(up_in == 1, "Case", "Ctrl")) |>
@@ -216,7 +212,7 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           )
         )
       } else {
-        # single point selected
+        # single point selected, either by click or marquee
         selected_rows <- stringr::str_remove_all(selected_rows, "@.*")
         values$selection <- values$gg_data |>
           dplyr::filter(code %in% selected_rows) |>
@@ -363,7 +359,8 @@ mod_timeCodeWASVisualization_server <- function(id, r_studyResult) {
           legend.key.height = grid::unit(5, "mm"),
           legend.key.width = grid::unit(10, "mm"),
           legend.position = "bottom",
-          legend.direction = "vertical"
+          legend.direction = "vertical",
+          strip.text.x = ggplot2::element_text(size = 10)
         ) +
         ggplot2::scale_color_manual(values = c("darkgray")) +
         ggplot2::scale_fill_manual(values = c(
