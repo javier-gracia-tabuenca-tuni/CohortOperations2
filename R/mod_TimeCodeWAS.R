@@ -40,8 +40,11 @@ mod_timeCodeWAS_ui <- function(id) {
       selected = c("useConditionOccurrence", "useDrugExposure", "useProcedureOccurrence", "useDeviceExposure", "useMeasurement", "useObservation"),
       options = list(`actions-box` = TRUE),
       multiple = TRUE),
-    shiny::tags$h5("Select ranges"),
+    # shiny::tags$h5("Select ranges"),
+    # mod_temporalRanges_ui(ns("selectRanges")),
+    htmltools::hr(),
     mod_temporalRanges_ui(ns("selectRanges")),
+    shiny::tags$br(),
     #
     htmltools::hr(),
     shiny::tags$h4("Summary"),
@@ -54,7 +57,16 @@ mod_timeCodeWAS_ui <- function(id) {
     reactable::reactableOutput(ns("reactableResults")),
     shiny::tags$br(),
     shiny::downloadButton(ns("download_actionButton"), "Download"),
-    shiny::actionButton(ns("view_actionButton"), "Open Viewer"),
+    #
+    htmltools::hr(),
+    shiny::tags$h4("CodeWAS Visualization"),
+    mod_timeCodeWASVisualization_ui(ns("timeCodeWAS_visualization")),
+    shiny::tags$br(),
+    shiny::tags$div(
+      style="margin-bottom:50px;",
+      shiny::actionButton(ns("viewer_actionButton"), "Load CodeWAS Viewer"),
+    ),
+    shiny::tags$br(),
   )
 }
 
@@ -62,8 +74,6 @@ mod_timeCodeWAS_ui <- function(id) {
 mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
-
-
 
     #
     # reactive variables
@@ -223,7 +233,6 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
         #
         ParallelLogger::logInfo("Start timeCodeWasCounts")
         temporalCovariateSettings <- do.call(FeatureExtraction::createTemporalCovariateSettings, studySettings$temporalCovariateSettings)
-        #browser()
         timeCodeWasCounts <- HadesExtras::CohortDiagnostics_runTimeCodeWAS(
           connection = cohortTableHandler$connectionHandler$getConnection(),
           cdmDatabaseSchema = cohortTableHandler$cdmDatabaseSchema,
@@ -263,7 +272,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     shiny::observe({
       condition <- !is.null(rf_timeCodeWasCounts())
       shinyjs::toggleState("download_actionButton", condition = condition )
-      shinyjs::toggleState("view_actionButton", condition = condition )
+      shinyjs::toggleState("viewer_actionButton", condition = condition )
     })
 
 
@@ -273,6 +282,12 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
         write.csv(r$timeCodeWasCounts, fname)
       }
     )
+
+    shiny::observeEvent(input$viewer_actionButton, {
+      shiny::req(rf_timeCodeWasCounts)
+
+      mod_timeCodeWASVisualization_server("timeCodeWAS_visualization", rf_timeCodeWasCounts())
+    })
 
 
 
