@@ -14,7 +14,9 @@ Imports:
     checkmate,
     dplyr,
     reactable,
+    shiny,
     shinydashboard,
+    shinyWidgets,
     yaml
 Suggests: 
     knitr,
