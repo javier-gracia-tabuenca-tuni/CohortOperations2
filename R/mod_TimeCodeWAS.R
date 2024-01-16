@@ -165,6 +165,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
       shiny::req(r_ranges()$temporalEndDays)
 
       studySettings <- list(
+        studyType = "timeCodeWAS",
         cohortIdCases = input$selectCaseCohort_pickerInput,
         cohortIdControls = input$selectControlCohort_pickerInput,
         temporalCovariateSettings = list(
@@ -258,7 +259,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     })
 
     #
-    # activate settings if cohors have been selected
+    # activate settings if cohorts have been selected
     #
     shiny::observe({
       condition <- !is.null(rf_timeCodeWasCounts())
@@ -268,9 +269,35 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
 
 
     output$download_actionButton <- shiny::downloadHandler(
-      filename = function(){"thename.csv"},
+      filename = function(){"analysisName_TimeCodeWAS.zip"},
       content = function(fname){
-        write.csv(r$timeCodeWasCounts, fname)
+
+        sweetAlert_spinner("Preparing files for download")
+
+        # create a new directory in random temp directory
+        tmpDir <- file.path(tempdir(), "cohortOperationsStudy")
+        dir.create(tmpDir)
+
+        # save cohorts used in analysis
+        usedCohortsIds <- c(r$studySettings$cohortIdCases, r$studySettings$cohortIdControls)
+        usedCohortsSummaryDatabases <- fct_getCohortsSummariesFromDatabasesHandlers(r_connectionHandlers$databasesHandlers) |>
+          dplyr::filter(cohortId %in% usedCohortsIds) |>
+          dplyr::select(databaseName, cohortId, shortName, cohortName,cohortEntries, cohortSubjects)
+
+        write.csv(usedCohortsSummaryDatabases, file.path(tmpDir, "cohortsSummary.csv"))
+
+        # save analysis settings
+        yaml::write_yaml(r$studySettings, file.path(tmpDir, "studySettings.yaml"))
+
+        # save analysis results
+        write.csv(rf_timeCodeWasCounts(), file.path(tmpDir, "results.csv"))
+
+        # zip all files
+        zip::zipr(zipfile = fname, files = tmpDir)
+
+        remove_sweetAlert_spinner()
+
+        return(fname)
       }
     )
 
