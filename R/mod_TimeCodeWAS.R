@@ -40,8 +40,9 @@ mod_timeCodeWAS_ui <- function(id) {
       selected = c("useConditionOccurrence", "useDrugExposure", "useProcedureOccurrence", "useDeviceExposure", "useMeasurement", "useObservation"),
       options = list(`actions-box` = TRUE),
       multiple = TRUE),
-    shiny::tags$h5("Select ranges"),
-    mod_temporalRanges_ui(ns("selectRanges")),
+    htmltools::hr(),
+    mod_formTimeWindows_ui(ns("selectRanges")),
+    shiny::tags$br(),
     #
     htmltools::hr(),
     shiny::tags$h4("Summary"),
@@ -68,7 +69,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     #
     # reactive variables
     #
-    r_ranges <- mod_temporalRanges_server("selectRanges")
+    r_ranges <- mod_formTimeWindows_server("selectRanges")
 
     r <- shiny::reactiveValues(
       studySettings = NULL
