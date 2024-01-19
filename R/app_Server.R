@@ -6,6 +6,7 @@
 #' @noRd
 app_server <- function(input, output, session) {
   # Your application server logic
+  print("app_server")
 
   # get settings loaded from file
   configurationList <- shiny::getShinyOption("configurationList")
@@ -26,15 +27,18 @@ app_server <- function(input, output, session) {
 
   mod_selectDatabases_server("selectDatabases", configurationList, r_connectionHandlers)
 
-  mod_cohortWorkbench_server("cohortWorkbench_importCohorts", r_connectionHandlers, r_workbench)
-  mod_importCohortsFromFile_server("importCohortsFromFile", r_connectionHandlers, r_workbench)
-
-  mod_cohortWorkbench_server("cohortWorkbench_matchCohorts", r_connectionHandlers, r_workbench)
-  mod_matchCohorts_server("matchCohorts", r_connectionHandlers, r_workbench)
-
-
-  mod_cohortWorkbench_server("cohortWorkbench_timeCodeWAS", r_connectionHandlers, r_workbench)
-  mod_timeCodeWAS_server("timeCodeWAS", r_connectionHandlers)
-
+  # mod_cohortWorkbench_server("cohortWorkbench_importCohorts", r_connectionHandlers, r_workbench)
+  # mod_importCohortsFromFile_server("importCohortsFromFile", r_connectionHandlers, r_workbench)
+  #
+  # mod_cohortWorkbench_server("cohortWorkbench_matchCohorts", r_connectionHandlers, r_workbench)
+  # mod_matchCohorts_server("matchCohorts", r_connectionHandlers, r_workbench)
+  #
+  #
+  # mod_cohortWorkbench_server("cohortWorkbench_timeCodeWAS", r_connectionHandlers, r_workbench)
+  # mod_timeCodeWAS_server("cohortsIncidence", r_connectionHandlers)
+  #
+  # mod_cohortWorkbench_server("cohortWorkbench_cohortsIncidence", r_connectionHandlers, r_workbench)
+  # mod_timeCodeWAS_server("timeCodeWAS", r_connectionHandlers)
+  #
 
 }
