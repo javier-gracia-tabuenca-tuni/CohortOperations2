@@ -40,8 +40,9 @@ mod_timeCodeWAS_ui <- function(id) {
       selected = c("useConditionOccurrence", "useDrugExposure", "useProcedureOccurrence", "useDeviceExposure", "useMeasurement", "useObservation"),
       options = list(`actions-box` = TRUE),
       multiple = TRUE),
-    shiny::tags$h5("Select ranges"),
-    mod_temporalRanges_ui(ns("selectRanges")),
+    htmltools::hr(),
+    mod_formTimeWindows_ui(ns("selectRanges")),
+    shiny::tags$br(),
     #
     htmltools::hr(),
     shiny::tags$h4("Summary"),
@@ -53,7 +54,8 @@ mod_timeCodeWAS_ui <- function(id) {
     shiny::tags$h4("Results"),
     reactable::reactableOutput(ns("reactableResults")),
     shiny::tags$br(),
-    shiny::downloadButton(ns("download_actionButton"), "Download"),
+    shiny::downloadButton(ns("download_actionButton"), "Download to sandbox"),
+    shiny::downloadButton(ns("download_actionButton2"), "Download out of sandbox"),
     shiny::actionButton(ns("view_actionButton"), "Open Viewer"),
   )
 }
@@ -68,7 +70,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     #
     # reactive variables
     #
-    r_ranges <- mod_temporalRanges_server("selectRanges")
+    r_ranges <- mod_formTimeWindows_server("selectRanges")
 
     r <- shiny::reactiveValues(
       studySettings = NULL
@@ -165,6 +167,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
       shiny::req(r_ranges()$temporalEndDays)
 
       studySettings <- list(
+        studyType = "timeCodeWAS",
         cohortIdCases = input$selectCaseCohort_pickerInput,
         cohortIdControls = input$selectControlCohort_pickerInput,
         temporalCovariateSettings = list(
@@ -258,7 +261,7 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
     })
 
     #
-    # activate settings if cohors have been selected
+    # activate settings if cohorts have been selected
     #
     shiny::observe({
       condition <- !is.null(rf_timeCodeWasCounts())
@@ -268,9 +271,35 @@ mod_timeCodeWAS_server <- function(id, r_connectionHandlers) {
 
 
     output$download_actionButton <- shiny::downloadHandler(
-      filename = function(){"thename.csv"},
+      filename = function(){"analysisName_TimeCodeWAS.zip"},
       content = function(fname){
-        write.csv(r$timeCodeWasCounts, fname)
+
+        sweetAlert_spinner("Preparing files for download")
+
+        # create a new directory in random temp directory
+        tmpDir <- file.path(tempdir(), "cohortOperationsStudy")
+        dir.create(tmpDir)
+
+        # save cohorts used in analysis
+        usedCohortsIds <- c(r$studySettings$cohortIdCases, r$studySettings$cohortIdControls)
+        usedCohortsSummaryDatabases <- fct_getCohortsSummariesFromDatabasesHandlers(r_connectionHandlers$databasesHandlers) |>
+          dplyr::filter(cohortId %in% usedCohortsIds) |>
+          dplyr::select(databaseName, cohortId, shortName, cohortName,cohortEntries, cohortSubjects)
+
+        write.csv(usedCohortsSummaryDatabases, file.path(tmpDir, "cohortsSummary.csv"))
+
+        # save analysis settings
+        yaml::write_yaml(r$studySettings, file.path(tmpDir, "studySettings.yaml"))
+
+        # save analysis results
+        write.csv(rf_timeCodeWasCounts(), file.path(tmpDir, "results.csv"))
+
+        # zip all files
+        zip::zipr(zipfile = fname, files = tmpDir)
+
+        remove_sweetAlert_spinner()
+
+        return(fname)
       }
     )
 

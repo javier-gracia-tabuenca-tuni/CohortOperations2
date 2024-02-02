@@ -36,5 +36,9 @@ app_server <- function(input, output, session) {
   mod_cohortWorkbench_server("cohortWorkbench_timeCodeWAS", r_connectionHandlers, r_workbench)
   mod_timeCodeWAS_server("timeCodeWAS", r_connectionHandlers)
 
+  mod_cohortWorkbench_server("cohortWorkbench_cohortsIncidence", r_connectionHandlers, r_workbench)
+  mod_cohortsIncidence_server("cohortsIncidence", r_connectionHandlers)
 
 }
+
+

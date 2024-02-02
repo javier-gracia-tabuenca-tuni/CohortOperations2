@@ -21,7 +21,12 @@ app_ui <- function(request) {
           shiny::h5(" Cohorts"),
           shinydashboard::menuItem("Import Cohorts", tabName = "importCohorts", icon = shiny::icon("address-card")),
           shinydashboard::menuItem("Match Cohorts", tabName = "matchCohorts", icon = shiny::icon("connectdevelop")),
+          shinydashboard::menuItem("Subset Cohorts", tabName = "subsetCohorts", icon = shiny::icon("person-digging")),
+          shinydashboard::menuItem("Match Cohorts", tabName = "matchCohorts", icon = shiny::icon("person-digging")),
           shiny::h5(" Analyses"),
+          shinydashboard::menuItem("Cohorts Overlap", tabName = "cohortsOverlap", icon = shiny::icon("person-digging")),
+          shinydashboard::menuItem("Cohorts Incidence", tabName = "cohortsIncidence", icon = shiny::icon("person-digging")),
+          shinydashboard::menuItem("CodeWAS", tabName = "CodeWAS", icon = shiny::icon("person-digging")),
           shinydashboard::menuItem("Time CodeWAS", tabName = "timeCodeWAS", icon = shiny::icon("road"))
         )
       ),
@@ -69,6 +74,22 @@ app_ui <- function(request) {
               title = shiny::tagList(shiny::icon("connectdevelop"), "Match Cohorts:"),
               solidHeader = TRUE, width = 12,
               mod_matchCohorts_ui("matchCohorts")
+            )
+          ),
+          ## TAB cohortsIncidence
+          shinydashboard::tabItem(
+            tabName = "cohortsIncidence",
+            ### Cohorts workbench
+            shinydashboard::box(
+              title = "Cohorts workbench ",
+              status = "primary", solidHeader = TRUE, width = 12,
+              mod_cohortWorkbench_ui("cohortWorkbench_cohortsIncidence")
+            ),
+            ### Import Cohorts
+            shinydashboard::box(
+              title = shiny::tagList(shiny::icon("connectdevelop"), "Cohorts Incidence:"),
+              solidHeader = TRUE, width = 12,
+              mod_cohortsIncidence_ui("cohortsIncidence")
             )
           ),
           ## TAB timeCodeWAS
