@@ -24,8 +24,8 @@ app_ui <- function(request) {
           shinydashboard::menuItem("Subset Cohorts", tabName = "subsetCohorts", icon = shiny::icon("person-digging")),
           shinydashboard::menuItem("Match Cohorts", tabName = "matchCohorts", icon = shiny::icon("person-digging")),
           shiny::h5(" Analyses"),
+          shinydashboard::menuItem("Cohorts Overlap", tabName = "cohortsOverlap", icon = shiny::icon("person-digging")),
           shinydashboard::menuItem("Cohorts Incidence", tabName = "cohortsIncidence", icon = shiny::icon("person-digging")),
-          shinydashboard::menuItem("Cohorts Incidence", tabName = "cohortIncidence", icon = shiny::icon("person-digging")),
           shinydashboard::menuItem("CodeWAS", tabName = "CodeWAS", icon = shiny::icon("person-digging")),
           shinydashboard::menuItem("Time CodeWAS", tabName = "timeCodeWAS", icon = shiny::icon("road"))
         )

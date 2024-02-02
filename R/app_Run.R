@@ -19,7 +19,7 @@ run_app <- function(pathToCohortOperationsConfigYalm, ...) {
 
   # set up logger
   logger <- setup_ModalWithLog()
-browser()
+
     app  <- shiny::shinyApp(
         ui = app_ui,
         server = app_server,

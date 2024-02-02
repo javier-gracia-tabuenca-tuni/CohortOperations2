@@ -54,7 +54,8 @@ mod_timeCodeWAS_ui <- function(id) {
     shiny::tags$h4("Results"),
     reactable::reactableOutput(ns("reactableResults")),
     shiny::tags$br(),
-    shiny::downloadButton(ns("download_actionButton"), "Download"),
+    shiny::downloadButton(ns("download_actionButton"), "Download to sandbox"),
+    shiny::downloadButton(ns("download_actionButton2"), "Download out of sandbox"),
     shiny::actionButton(ns("view_actionButton"), "Open Viewer"),
   )
 }

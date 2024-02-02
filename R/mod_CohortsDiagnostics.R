@@ -1,7 +1,7 @@
 
 
 
-mod_cohortsIncidence_ui <- function(id) {
+mod_cohortDiagnostics_ui <- function(id) {
   ns <- shiny::NS(id)
   htmltools::tagList(
     shinyjs::useShinyjs(),
@@ -18,6 +18,7 @@ mod_cohortsIncidence_ui <- function(id) {
       min = 1,
       max = 1000
     ),
+    # TODO : add more setting for cohortDiagnostics
     htmltools::hr(),
     #
     htmltools::hr(),
@@ -28,7 +29,7 @@ mod_cohortsIncidence_ui <- function(id) {
     #
     htmltools::hr(),
     shiny::tags$h4("Results"),
-    reactable::reactableOutput(ns("reactableResults")),
+    shiny::verbatimTextOutput(ns("results_text")),
     shiny::tags$br(),
     shiny::downloadButton(ns("download_actionButton"), "Download to Sandbox"),
     shiny::downloadButton(ns("download_actionButton2"), "Download out of Sandbox"),
@@ -37,7 +38,7 @@ mod_cohortsIncidence_ui <- function(id) {
 }
 
 
-mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
+mod_cohortDiagnostics_server <- function(id, r_connectionHandlers) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -51,7 +52,7 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
       studySettings = NULL
     )
 
-    rf_cohortsIncidenceCounts <- shiny::reactiveVal()
+    rf_sqliteDbPath <- shiny::reactiveVal()
 
     # A reactive value with the inputs to modalWithLog_server
     .r_l <- shiny::reactiveValues(
@@ -79,7 +80,7 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
         multiple = TRUE,
         options = list(
           `actions-box` = TRUE)
-        )
+      )
     })
 
 
@@ -111,10 +112,10 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
       }
 
       studySettings <- list(
-        studyType = "cohortsIncidence",
+        studyType = "cohortDiagnostics",
         databaseIdsCohorsIdsList = databaseIdsCohorsIdsList,
         minCellCount = input$minCellCount_numericInput
-        )
+      )
 
       r$studySettings <- studySettings
 
@@ -151,7 +152,7 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
 
 
     # Take parameters, run function in a future, open modal with log, close modal when ready, return value
-    rf_cohortsIncidenceCounts <- modalWithLog_server(
+    rf_sqliteDbPath <- modalWithLog_server(
       id = "sss",
       .f = function(
     databasesHandlers,
@@ -161,7 +162,7 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
         # needs to be set in the future
         options(sqlRenderTempEmulationSchema=sqlRenderTempEmulationSchema)
         #
-        ParallelLogger::logInfo("Start cohortsIncidence")
+        ParallelLogger::logInfo("Start cohortDiagnostics")
         for(databaseId in names(studySettings$databaseIdsCohorsIdsList)){
           ParallelLogger::logInfo("databaseId = ", databaseId)
           cohortTableHandler <-databasesHandlers[[databaseId]]$cohortTableHandler
@@ -178,30 +179,37 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
             cohortTable = cohortTableHandler$cohortTableNames$cohortTable,
             vocabularyDatabaseSchema = cohortTableHandler$vocabularyDatabaseSchema,
             cohortIds = studySettings$databaseIdsCohorsIdsList[[databaseId]],
-            runInclusionStatistics = FALSE,
-            runIncludedSourceConcepts = FALSE,
-            runOrphanConcepts = FALSE,
-            runTimeSeries = FALSE,
-            runVisitContext = FALSE,
-            runBreakdownIndexEvents = FALSE,
-            runIncidenceRate = TRUE,
-            runCohortRelationship = FALSE,
-            runTemporalCohortCharacterization = FALSE,
-            minCellCount = 1,
+            # runInclusionStatistics = FALSE,
+            # runIncludedSourceConcepts = FALSE,
+            # runOrphanConcepts = FALSE,
+            # runTimeSeries = FALSE,
+            # runVisitContext = FALSE,
+            # runBreakdownIndexEvents = FALSE,
+            # runIncidenceRate = TRUE,
+            # runCohortRelationship = FALSE,
+            # runTemporalCohortCharacterization = FALSE,
+            minCellCount = studySettings$minCellCount,
             incremental = FALSE
           )
         }
 
         #merge files
-        cohortsIncidence <- NULL
+        cohortDiagnostics <- NULL
         for(databaseId in names(studySettings$databaseIdsCohorsIdsList)){
           ParallelLogger::logInfo("databaseId = ", databaseId)
-          incidenceRate <- readr::read_csv(file.path(tempdir(), databaseId, "incidence_rate.csv"))
-          cohortsIncidence <- dplyr::bind_rows(cohortsIncidence, incidenceRate)
+          # copy results files to the same folder
+          tmpTempDir <- file.path(tempdir(), format(Sys.time(), "%Y%m%d_%H%M%S"))
+          dir.create(tmpTempDir)
+          file.copy(
+            from = file.path(tempdir(), databaseId, paste0("Results_", databasesHandlers[[databaseId]]$cohortTableHandler$databaseName, ".zip") ),
+            to = file.path(tmpTempDir, paste0("Results_", databaseId, ".zip") ),
+            overwrite = TRUE
+          )
         }
-
-        ParallelLogger::logInfo("End cohortsIncidence")
-        return(cohortsIncidence)
+        sqliteDbPath <- file.path(tmpTempDir,"MyCohortDiagnosticsResulst.sqlite")
+        CohortDiagnostics::createMergedResultsFile(tmpTempDir, sqliteDbPath, overwrite = TRUE)
+        ParallelLogger::logInfo("End cohortDiagnostics")
+        return(sqliteDbPath)
       },
     .r_l = .r_l,
     logger = shiny::getShinyOption("logger"))
@@ -210,16 +218,10 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
     #
     # display results
     #
-    output$reactableResults <- reactable::renderReactable({
-      shiny::req(rf_cohortsIncidenceCounts)
+    output$results_text <- shiny::renderText({
+      shiny::req(rf_sqliteDbPath)
 
-      rf_cohortsIncidenceCounts() |>
-        reactable::reactable(
-          sortable = TRUE,
-          resizable = TRUE,
-          filterable = TRUE,
-          defaultPageSize = 5
-        )
+      rf_sqliteDbPath()
 
     })
 
@@ -227,14 +229,14 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
     # activate settings if cohorts have been selected
     #
     shiny::observe({
-      condition <- !is.null(rf_cohortsIncidenceCounts())
+      condition <- !is.null(rf_sqliteDbPath())
       shinyjs::toggleState("download_actionButton", condition = condition )
       shinyjs::toggleState("view_actionButton", condition = condition )
     })
 
 
     output$download_actionButton <- shiny::downloadHandler(
-      filename = function(){"analysisName_cohortsIncidence.zip"},
+      filename = function(){"analysisName_cohortDiagnostics.zip"},
       content = function(fname){
 
         sweetAlert_spinner("Preparing files for download")
@@ -255,7 +257,7 @@ mod_cohortsIncidence_server <- function(id, r_connectionHandlers) {
         yaml::write_yaml(r$studySettings, file.path(tmpDir, "studySettings.yaml"))
 
         # save analysis results
-        write.csv(rf_cohortsIncidenceCounts(), file.path(tmpDir, "results.csv"))
+        write.csv(rf_sqliteDbPath(), file.path(tmpDir, "results.csv"))
 
         # zip all files
         zip::zipr(zipfile = fname, files = tmpDir)
